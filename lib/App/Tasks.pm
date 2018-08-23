@@ -8,16 +8,19 @@ package App::Tasks;
 use strict;
 use warnings;
 
-use v5.10;
+use v5.24;
 
+use autodie;
 use Carp;
+use Digest::SHA qw(sha256_hex);
+use File::ByLine;
 use File::Copy;
-use File::Slurp;
 use File::Temp;
 use FindBin;
 use IO::Dir;
 use IO::Prompter;
 use List::Util qw/max/;
+use POSIX;
 use Term::ANSIColor;    # Used for IO::Prompter to do color
 use Term::Cap;
 use Term::ReadKey;
@@ -27,11 +30,7 @@ my $P2         = '> ';
 my $PCOLOR     = color('reset bold cyan');
 my $PBOLDCOLOR = color('reset bold green');
 my $PINFOCOLOR = color('reset dark cyan');
-my @PSTYLE     = (
-    -style => "reset bold cyan"
-
-      # -echostyle => "bold cyan"
-);
+my @PSTYLE     = ( -style => "reset bold cyan" );
 
 my @PAGERCMD = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
 my @EDITORCMD;
@@ -240,6 +239,11 @@ sub task_move {
     if ( scalar(@_) != 2 ) { confess 'invalid call' }
     my ( $old, $new ) = @_;
 
+    if ( !check_task_log() ) {
+        say "Can't move task - task numbers may have changed since last 'task list'";
+        return;
+    }
+
     my $end = get_next_sequence();
     if ( $new >= $end ) {
         $new = $end - 1;
@@ -321,7 +325,7 @@ sub read_task {
     $task->{body}   = [];
     $task->{number} = $tasknum;
 
-    my @lines = File::Slurp::read_file( get_task_filename($tasknum) );
+    my @lines = readlines get_task_filename($tasknum);
     while (@lines) {
         my $line = shift(@lines);
         chomp($line);
@@ -405,6 +409,11 @@ sub sprint_body {
 sub task_add_note {
     if ( scalar(@_) != 1 ) { confess 'invalid call'; }
     my ($tasknum) = @_;
+
+    if ( !check_task_log() ) {
+        say "Can't add note - task numbers may have changed since last 'task list'";
+        return;
+    }
 
     add_note($tasknum);
 }
@@ -511,7 +520,7 @@ sub get_note_from_user_external {
     my @cmd = map { s/%FILENAME%/$filename/g; $_ } @EDITORCMD;
     system(@cmd);
 
-    my @lines = File::Slurp::read_file($filename);
+    my @lines = readlines $filename;
     if ( !scalar(@lines) ) { return; }
 
     # Eat the header
@@ -559,6 +568,11 @@ sub get_note_from_user_external {
 sub task_close {
     if ( scalar(@_) != 1 ) { confess 'invalid call'; }
     my ($tasknum) = @_;
+
+    if ( !check_task_log() ) {
+        say "Can't close task - task numbers may have changed since last 'task list'";
+        return;
+    }
 
     add_note($tasknum);
 
@@ -630,6 +644,7 @@ sub task_list {
     if ( scalar(@_) > 1 ) { confess 'invalid call' }
     my ($num) = @_;
 
+    update_task_log();    # So we know we've done this.
     my $out = generate_task_list( $num, undef );
 
     display_with_pager( "Tasklist", $out );
@@ -649,7 +664,9 @@ sub task_monitor {
         my ( $wchar, $hchar, $wpixel, $hpixel ) = GetTerminalSize(*STDOUT);
         if ( !defined($wchar) ) { die "Terminal not supported"; }
 
+        update_task_log();    # So we know we've done this.
         my $out = ( scalar localtime() ) . ' local / ' . ( scalar gmtime() ) . " UTC\n\n";
+
         $out .= generate_task_list( $hchar - 1, $wchar - 1 );
         if ( $out ne $last ) {
             $last = $out;
@@ -692,6 +709,91 @@ sub coalesce_tasks {
             $i++;
         }
     }
+}
+
+sub update_task_log {
+    if ( scalar(@_) != 0 ) { confess 'invalid call' }
+
+    my $sha = get_taskhash();
+
+    my @terms;
+    if ( -f ".taskview.status" ) {
+        @terms = readlines ".taskview.status";
+    }
+
+    my $oldhash = '';
+    if (@terms) {
+        $oldhash = shift(@terms);
+    }
+
+    my $tty = get_ttyname();
+
+    if ( $oldhash eq $sha ) {
+        # No need to update...
+        if ( grep { $_ eq $tty } @terms ) {
+            return;
+        }
+    } else {
+        @terms = ();
+    }
+
+    open my $fh, '>', '.taskview.status';
+    say $fh $sha;
+    foreach my $term (@terms) {
+        say $fh $term;
+    }
+    say $fh $tty;
+    close $fh;
+}
+
+# Returns true if the task log is okay for this process.
+sub check_task_log {
+    if ( scalar(@_) != 0 ) { confess 'invalid call' }
+
+    # Not a TTY?  Don't worry about this.
+    if ( !isatty(0) ) { return 1; }
+
+    my $sha = get_taskhash();
+
+    my @terms;
+    if ( -f ".taskview.status" ) {
+        @terms = readlines ".taskview.status";
+    }
+
+    my $oldhash = '';
+    if (@terms) {
+        $oldhash = shift(@terms);
+    }
+
+    # If hashes differ, it's not cool.
+    if ( $oldhash ne $sha ) { return; }
+
+    # If terminal in list, it's cool.
+    my $tty = get_ttyname();
+    if ( grep { $_ eq $tty } @terms ) {
+        return 1;
+    }
+
+    # Not in list.
+    return;
+}
+
+sub get_taskhash {
+    if ( scalar(@_) != 0 ) { confess 'invalid call' }
+
+    my $tl = generate_task_list( undef, undef );
+    return sha256_hex($tl);
+}
+
+sub get_ttyname {
+    if ( scalar(@_) != 0 ) { confess 'invalid call' }
+
+    my $tty = getppid . ':';
+    if ( isatty(0) ) {
+        $tty .= ttyname(0);
+    }
+
+    return $tty;
 }
 
 1;
