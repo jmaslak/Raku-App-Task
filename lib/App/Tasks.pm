@@ -8,6 +8,8 @@ package App::Tasks;
 use strict;
 use warnings;
 
+use v5.10;
+
 use Carp;
 use File::Copy;
 use File::Slurp;
@@ -72,13 +74,12 @@ sub start {
             { 'Quit to Shell'              => 'quit' }
         );
 
-        print "${PCOLOR}Please select an option...\n";
-        print "\n";
+        say "${PCOLOR}Please select an option...\n";
+        say "\n";
         for ( my $i = 1; $i <= scalar(@choices); $i++ ) {
-            printf "${PBOLDCOLOR}%2d.${PINFOCOLOR} %s\n",
-              $i, keys %{ $choices[ $i - 1 ] };
+            printf "${PBOLDCOLOR}%2d.${PINFOCOLOR} %s\n", $i, keys %{ $choices[ $i - 1 ] };
         }
-        print "\n";
+        say "";
 
         my $command = prompt(
             -integer => sub { $_ > 0 && $_ <= scalar(@choices); },
@@ -88,27 +89,27 @@ sub start {
 
         my (@tmp) = values %{ $choices[ $command - 1 ] };
         $args[0] = $tmp[0];
-        print "\n";
+        say "";
 
         if ( $args[0] eq 'quit' ) { exit; }
     }
 
-    if (scalar(@args) == 1) {
-        if ($args[0] =~ /^\d+$/) {
-            unshift @args, 'view'; # We view the task if one arg entered
+    if ( scalar(@args) == 1 ) {
+        if ( $args[0] =~ /^\d+$/ ) {
+            unshift @args, 'view';    # We view the task if one arg entered
         }
     }
 
     my @validtasks = map { s/-.*$//; int($_); } get_task_filenames();
 
-    my $cmd = lc(shift(@args));
+    my $cmd = lc( shift(@args) );
     if ( ( $cmd eq 'new' ) or ( $cmd eq 'add' ) ) {
         task_new(@args);
     } elsif ( $cmd eq 'move' ) {
         if ( !defined( $args[0] ) ) {
             $args[0] = prompt(
                 "$P1 Please enter source task number to move $P2",
-                -integer => sub { $_ > 0 },
+                -integer   => sub { $_ > 0 },
                 -guarantee => [@validtasks],
                 @PSTYLE
             ) or exit;
@@ -125,33 +126,33 @@ sub start {
         if ( !defined( $args[0] ) ) {
             $args[0] = prompt(
                 "$P1 Please enter task number to show $P2",
-                -integer => sub { $_ > 0 },
+                -integer   => sub { $_ > 0 },
                 -guarantee => [@validtasks],
                 @PSTYLE
             ) or exit;
-            print "\n";
+            say "";
         }
         task_show(@args);
     } elsif ( $cmd eq 'note' ) {
         if ( !defined( $args[0] ) ) {
             $args[0] = prompt(
                 "$P1 Please enter task number to modify $P2",
-                -integer => sub { $_ > 0 },
+                -integer   => sub { $_ > 0 },
                 -guarantee => [@validtasks],
-                 @PSTYLE
+                @PSTYLE
             ) or exit;
-            print "\n";
+            say "";
         }
         task_add_note(@args);
     } elsif ( ( $cmd eq 'close' ) or ( $cmd eq 'commit' ) ) {
         if ( !defined( $args[0] ) ) {
             $args[0] = prompt(
                 "$P1 Please enter task number to close $P2",
-                -integer => sub { $_ > 0 },
+                -integer   => sub { $_ > 0 },
                 -guarantee => [@validtasks],
                 @PSTYLE
             ) or exit;
-            print "\n";
+            say "";
         }
         task_close(@args);
     } elsif ( $cmd eq 'list' ) {
@@ -161,7 +162,7 @@ sub start {
     } elsif ( $cmd eq 'coalesce' ) {
         task_coalesce(@args);
     } else {
-        print "WRONG USAGE\n";
+        say "WRONG USAGE";
     }
 }
 
@@ -196,29 +197,29 @@ sub task_new {
     $subject =~ s/^\s+//o;
     $subject =~ s/\s+$/o/;
     $subject =~ s/\t/ /og;
-    if ( $subject eq '' ) { print "Blank subject, exiting.\n"; exit; }
-    print "\n";
+    if ( $subject eq '' ) { say "Blank subject, exiting."; exit; }
+    say "";
 
     my $body = get_note_from_user();
 
     if ( !confirm_save() ) {
-        print "Aborting.\n";
+        say "Aborting.";
         exit;
     }
 
     my $tm = scalar( time() );
     open my $fh, '>', "$seq-none.task";
-    print $fh "Title: $subject\n";
-    print $fh "Created: $tm\n";
+    say $fh "Title: $subject";
+    say $fh "Created: $tm";
 
     if ( defined($body) ) {
-        print $fh "--- $tm\n";
+        say $fh "--- $tm";
         print $fh $body;
     }
 
     close $fh;
 
-    print "Created task $seq\n";
+    say "Created task $seq";
 }
 
 sub get_task_filename {
@@ -375,10 +376,8 @@ sub sprint_header_line {
 
     my $len = $H_LEN;
     $out .=
-      sprintf( color("bold green")
-          . "%-${len}s : "
-          . color("bold yellow") . "%s"
-          . color("reset") . "\n",
+      sprintf(
+        color("bold green") . "%-${len}s : " . color("bold yellow") . "%s" . color("reset") . "\n",
         $H_INFO{$header}{display}, $value );
 
     return $out;
@@ -418,19 +417,19 @@ sub add_note {
 
     my $note = get_note_from_user();
     if ( !defined($note) ) {
-        print "Not adding note\n";
+        say "Not adding note";
         return;
     }
 
     if ( !( confirm_save() ) ) {
-        print "Aborting.\n";
+        say "Aborting.";
         exit;
     }
 
     my $fn = get_task_filename($tasknum) or die("Task not found");
     write_file( $fn, { append => 1 }, "--- " . time() . "\n$note" );
 
-    print "Updated task $tasknum\n";
+    say "Updated task $tasknum";
 }
 
 sub confirm_save {
@@ -475,7 +474,7 @@ sub get_note_from_user_internal {
         $body .= $line . "\n";
     }
 
-    print "\n";
+    say "";
 
     if ( $body eq '' ) {
         return;
@@ -501,13 +500,12 @@ sub get_note_from_user_external {
         return;
     }
 
-    my $prompt = "Please enter any notes that should appear "
-      . "for this task below this line.";
+    my $prompt = "Please enter any notes that should appear " . "for this task below this line.";
 
     my $tmp      = File::Temp->new();
     my $filename = $tmp->filename;
-    print $tmp $prompt, "\n";
-    print $tmp '-' x 72, "\n";
+    say $tmp $prompt;
+    say $tmp '-' x 72;
     close $tmp;
 
     my @cmd = map { s/%FILENAME%/$filename/g; $_ } @EDITORCMD;
@@ -570,7 +568,7 @@ sub task_close {
     my $newfn = scalar(time) . "-$tasknum-$$-$meta.task";
 
     move $fn, "done/$newfn";
-    print "Closed $tasknum\n";
+    say "Closed $tasknum";
     coalesce_tasks();
 }
 
@@ -615,12 +613,7 @@ sub generate_task_list {
         if ( defined($wchars) ) {
             $desc = substr( $title, 0, $wchars - length($tasknum) - 1 );
         }
-        $out .=
-            $PINFOCOLOR
-          . $tasknum . ' '
-          . $PBOLDCOLOR
-          . $desc
-          . color('reset') . "\n";
+        $out .= $PINFOCOLOR . $tasknum . ' ' . $PBOLDCOLOR . $desc . color('reset') . "\n";
 
         if ( defined($num) ) {
 
@@ -650,13 +643,14 @@ sub task_monitor {
 
     my $clear = $terminal->Tputs('cl');
 
-    my $last = 'x';  # Not '' because then we won't try to draw the initial
-                     # screen - there will be no "type any character" prompt!
+    my $last = 'x';    # Not '' because then we won't try to draw the initial
+                       # screen - there will be no "type any character" prompt!
     while (1) {
         my ( $wchar, $hchar, $wpixel, $hpixel ) = GetTerminalSize(*STDOUT);
         if ( !defined($wchar) ) { die "Terminal not supported"; }
 
-        my $out = generate_task_list( $hchar - 1, $wchar - 1 );
+        my $out = ( scalar localtime() ) . ' local / ' . ( scalar gmtime() ) . " UTC\n\n";
+        $out .= generate_task_list( $hchar - 1, $wchar - 1 );
         if ( $out ne $last ) {
             $last = $out;
             print $clear;
@@ -665,7 +659,8 @@ sub task_monitor {
         }
         if ( defined( Term::ReadKey::ReadKey(1) ) ) {
             Term::ReadKey::ReadMode('restore');
-            print "\nExiting.\n";
+            say "";
+            say "Exiting.";
             exit;
         }
     }
@@ -675,7 +670,7 @@ sub task_coalesce {
     if ( scalar(@_) != 0 ) { confess 'invalid call'; }
 
     coalesce_tasks();
-    print "Coalesced tasks\n";
+    say "Coalesced tasks";
 }
 
 sub coalesce_tasks {
