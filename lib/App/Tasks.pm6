@@ -400,7 +400,7 @@ sub get_note_from_user_internal() {
       ~ color("reset");
 
     my $body = '';
-    while my $line = $*IN.get {
+    while defined my $line = $*IN.get {
         if ( $line eq '.' ) {
             last;
         }
@@ -705,16 +705,16 @@ sub menu-prompt($prompt, @choices) {
     }
        
     say "";
-    print $prompt;
+    prompt $prompt;
 
-    while my $line = $*IN.get {
+    while defined my $line = $*IN.get {
         if %elems{$line}:exists {
             return %elems{$line}<value>;
         }
 
         say "";
         say "Invalid choice, please try again";
-        print $prompt;
+        prompt $prompt;
     }
 
     return;
@@ -722,16 +722,16 @@ sub menu-prompt($prompt, @choices) {
 
 sub no-menu-prompt($prompt, @choices) {
     say "";
-    print $prompt;
+    prompt $prompt;
 
-    while my $line = $*IN.get {
+    while defined my $line = $*IN.get {
         if @choices.grep( { $^a eq $line } ) {
             return $line;
         }
 
         say "";
         say "Invalid choice, please try again";
-        print $prompt;
+        prompt $prompt;
     }
 
     return;
@@ -739,9 +739,9 @@ sub no-menu-prompt($prompt, @choices) {
 
 sub uint-prompt($prompt --> Int) {
     say "";
-    print $prompt;
+    prompt $prompt;
 
-    while my $line = $*IN.get {
+    while defined my $line = $*IN.get {
         if $line !~~ m:s/ ^ \d+ $ / {
             return $line;
         }
@@ -751,7 +751,7 @@ sub uint-prompt($prompt --> Int) {
         say "";
 
         say "";
-        print $prompt;
+        prompt $prompt;
     }
 
     return;
@@ -759,16 +759,16 @@ sub uint-prompt($prompt --> Int) {
 
 sub str-prompt($prompt --> Str) {
     say "";
-    print $prompt;
+    prompt $prompt;
 
-    while my $line = $*IN.get {
+    while defined my $line = $*IN.get {
         if $line ne '' {
             return $line;
         }
 
         say "";
         say "Invalid input, please try again";
-        print $prompt;
+        prompt $prompt;
     }
 
     return;
@@ -776,9 +776,9 @@ sub str-prompt($prompt --> Str) {
 
 sub yn-prompt($prompt --> Bool) {
     say "";
-    print $prompt;
+    prompt $prompt;
 
-    while my $line = $*IN.get {
+    while defined my $line = $*IN.get {
         $line = $line.fc();
         if $line eq '' {
             return True;
@@ -790,10 +790,16 @@ sub yn-prompt($prompt --> Bool) {
 
         say "";
         say "Invalid choice, please try again";
-        print $prompt;
+        prompt $prompt;
     }
 
     return;
+}
+
+sub prompt($prompt) {
+    print $PCOLOR;
+    print $prompt;
+    print color('reset');
 }
 
 # XXX We always just say "nope!" for now.
