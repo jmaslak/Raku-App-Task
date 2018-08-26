@@ -10,16 +10,14 @@ use Digest::SHA1::Native;
 use File::Temp;
 use P5getpriority;
 use P5localtime;
+use Terminal::ANSIColor;
 
 my $P1         = '[task]';
 my $P2         = '> ';
-my $PCOLOR     = '';
-my $PBOLDCOLOR = '';
-my $PINFOCOLOR = '';
 
-# my $PCOLOR     = color('reset bold cyan');
-# my $PBOLDCOLOR = color('reset bold green');
-# my $PINFOCOLOR = color('reset dark cyan');
+my $PCOLOR     = color('reset bold cyan');
+my $PBOLDCOLOR = color('reset bold green');
+my $PINFOCOLOR = color('reset cyan');   # used to have dark
 # my @PSTYLE     = ( -style => "reset bold cyan" );
 
 my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
@@ -44,7 +42,7 @@ my %H_INFO = (
     }
 );
 
-my $H_LEN = %H_INFO.values.map( { .<display>.chars } );
+my $H_LEN = %H_INFO.values.map( { .<display>.chars } ).max;
 
 our sub start(@args is copy) {
     chdir $*PROGRAM.parent.add("data");
@@ -258,7 +256,7 @@ sub task_show(Int $tasknum where * ~~ ^100_000) {
     }
     $out ~= "\n";
 
-    for @$task<body> -> $body {
+    for |$task<body> -> $body {
         $out ~= sprint_body($body);
         $out ~= "\n";
     }
@@ -274,11 +272,10 @@ sub read-task(Int $tasknum where * ~~ ^100_000) {
 
     my @lines = get_task_filename($tasknum).IO.lines;
     while (@lines) {
-        my $line = shift(@lines);
-        chomp($line);
+        my $line = @lines.shift;
 
         if ( $line ~~ m/^ '--- ' \d+ $/ ) {
-            @lines.unshift: "$line\n";
+            @lines.unshift: "$line";
             read-task-body( $task, @lines );
             @lines = ();
             next;
@@ -296,10 +293,8 @@ sub read-task(Int $tasknum where * ~~ ^100_000) {
 
 sub read-task-body(Hash $task is rw, @lines) {
     for @lines -> $line {
-        chomp($line);
-
-        if $line ~~ m/^ '--- ' \d+ $/ {
-            my ($bodydate) = $line ~~ m/^ '--- ' (\d+) $/;
+        if $line ~~ m/^ '--- ' (\d+) $/ {
+            my $bodydate = $0.Int;
             my $body = Hash.new;
             $body<date> = $bodydate;
             $body<body> = [];
@@ -314,7 +309,7 @@ sub read-task-body(Hash $task is rw, @lines) {
     }
 }
 
-sub sprint_header_line($header, $value) {
+sub sprint_header_line($header, $value is copy) {
     if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'date' {
         $value = localtime($value, :scalar);
     }
@@ -322,31 +317,30 @@ sub sprint_header_line($header, $value) {
     my $out = '';
 
     my $len = $H_LEN;
-    $out ~=
-      sprintf( "%-{$len}s : %s\n", %H_INFO{$header}<display>, $value );
 
-#--    $out ~=
-#--      sprintf(
-#--        color("bold green") . "%-{$len}s : " . color("bold yellow") . "%s" . color("reset") . "\n",
-#--        $H_INFO{$header}{display}, $value );
+    $out ~= color("bold green");
+    $out ~= sprintf( "%-{$len}s : ", %H_INFO{$header}<display> );
+    $out ~= color("bold yellow");
+    $out ~= $value;
+    $out ~= color("reset");
+    $out ~= "\n";
 
     return $out;
 }
 
 sub sprint_body($body) {
-#--    my $out =
-#--        color("bold red") . "["
-#--      . localtime $body->{date} . "]"
-#--      . color('reset')
-#--      . color('red') . ':'
-#--      . color("reset") . "\n";
-    my $out = "[" ~ localtime($body<date>, :scalar) ~ "]:\n";
+    my $out =
+        color("bold red") ~ "["
+      ~ localtime($body<date>, :scalar) ~ "]"
+      ~ color('reset')
+      ~ color('red') ~ ':'
+      ~ color("reset") ~ "\n";
 
-    # my $coloredtext = $body<body>;
-    # my $yellow      = color("yellow");
-    # $coloredtext =~ s/^/$yellow/mg;
-    # $out ~= $coloredtext . color("reset");
-    $out ~= $body<body>;
+    my $coloredtext = $body<body>;
+    my $yellow      = color("yellow");
+    $coloredtext   ~~ s:g/^^/$yellow/;
+
+    $out ~= $coloredtext ~ color("reset");
 
     return $out;
 }
@@ -375,8 +369,10 @@ sub add_note(Int $tasknum where * ~~ ^100_000) {
     }
 
     my $fn = get_task_filename($tasknum) or die("Task not found");
-    my $fh = $fn.open(:append);
-    $fh.print: "--- " ~ time ~ "\n$note";
+    my $fh = $fn.open(:a);
+    $fh.say: "--- " ~ time;
+    $fh.say: $note;
+    $fh.close;
 
     say "Updated task $tasknum";
 }
@@ -389,7 +385,7 @@ sub confirm_save() {
 }
 
 sub get_note_from_user() {
-    if ! @EDITORCMD.elems == 0 {
+    if ! @EDITORCMD {
         return get_note_from_user_internal();
     } else {
         return get_note_from_user_external();
@@ -397,16 +393,14 @@ sub get_note_from_user() {
 }
 
 sub get_note_from_user_internal() {
-#--    print color("bold cyan") . "Enter Note Details" . color("reset");
-#--    print color("cyan")
-#--      . " (Use '.' on a line by itself when done)"
-#--      . color("bold cyan") . ":"
-#--      . color("reset") . "\n";
-
-    say "Enter Note Details (Use '.' on a line by itself when done):";
+    print color("bold cyan") ~ "Enter Note Details" ~ color("reset");
+    say color("cyan")
+      ~ " (Use '.' on a line by itself when done)"
+      ~ color("bold cyan") ~ ":"
+      ~ color("reset");
 
     my $body = '';
-    while lines() -> $line {
+    while my $line = $*IN.get {
         if ( $line eq '.' ) {
             last;
         }
@@ -446,17 +440,14 @@ sub get_note_from_user_external() {
 
     # Eat the header
     my $first = @lines[0];
-    chomp $first;
     if $first eq $prompt { @lines.shift; }
     if @lines.elems {
         my $second = @lines[0];
-        chomp($second);
         if $second eq '-' x 72 { @lines.shift; }
     }
 
     # Remove blank lines at top
     for @lines -> $line is copy {
-        chomp $line;
 
         if $line ne '' {
             last;
@@ -466,7 +457,6 @@ sub get_note_from_user_external() {
     # Remove blank lines at bottom
     while @lines.elems {
         my $line = @lines[*-1];
-        chomp $line;
 
         if $line eq '' {
             @lines.pop;
@@ -475,7 +465,7 @@ sub get_note_from_user_external() {
         }
     }
 
-    my $out = join '', @lines;
+    my $out = join "\n", @lines;
     if ( $out ne '' ) {
         return $out;
     } else {
@@ -535,8 +525,7 @@ sub generate-task-list(Int $num? where {!$num.defined or $num > 0}, $wchars?) {
         if ( defined($wchars) ) {
             $desc = substr( $title, 0, $wchars - $tasknum.chars - 1 );
         }
-        # $out ~= "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc" ~ color('reset') ~ "\n";
-        $out ~= "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc\n";
+        $out ~= "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc" ~ color('reset') ~ "\n";
 
         if defined($num) {
 
@@ -718,7 +707,7 @@ sub menu-prompt($prompt, @choices) {
     say "";
     print $prompt;
 
-    for lines() -> $line {
+    while my $line = $*IN.get {
         if %elems{$line}:exists {
             return %elems{$line}<value>;
         }
@@ -735,7 +724,7 @@ sub no-menu-prompt($prompt, @choices) {
     say "";
     print $prompt;
 
-    while lines() -> $line {
+    while my $line = $*IN.get {
         if @choices.grep( { $^a eq $line } ) {
             return $line;
         }
@@ -752,7 +741,7 @@ sub uint-prompt($prompt --> Int) {
     say "";
     print $prompt;
 
-    while lines() -> $line {
+    while my $line = $*IN.get {
         if $line !~~ m:s/ ^ \d+ $ / {
             return $line;
         }
@@ -772,7 +761,7 @@ sub str-prompt($prompt --> Str) {
     say "";
     print $prompt;
 
-    while lines() -> $line {
+    while my $line = $*IN.get {
         if $line ne '' {
             return $line;
         }
@@ -789,7 +778,7 @@ sub yn-prompt($prompt --> Bool) {
     say "";
     print $prompt;
 
-    while lines() -> $line is copy {
+    while my $line = $*IN.get {
         $line = $line.fc();
         if $line eq '' {
             return True;
