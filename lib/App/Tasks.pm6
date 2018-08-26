@@ -8,6 +8,7 @@ unit module App::Tasks;
 
 use Digest::SHA1::Native;
 use File::Temp;
+use NativeCall;
 use P5getpriority;
 use P5localtime;
 use Terminal::ANSIColor;
@@ -138,7 +139,7 @@ sub get_next_sequence() {
 
     my $seq = 1;
     if @d.elems {
-        $seq = pop(@d);
+        $seq = pop(@d).basename;
         $seq ~~ s/ '-' .* $//;
         $seq++;
     }
@@ -802,12 +803,5 @@ sub prompt($prompt) {
     print color('reset');
 }
 
-# XXX We always just say "nope!" for now.
-multi sub isatty(Int --> Bool) { isatty() }
-multi sub isatty( --> Bool) {
-    return False;
-}
-
-# XXX We always say /dev/tty
-multi sub ttyname(Int --> Str) { ttyname() }
-multi sub ttyname(--> Str) { '/dev/tty' }
+sub isatty(uint32) returns int32 is native { * };
+sub ttyname(uint32) returns Str is native { * };
