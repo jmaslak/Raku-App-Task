@@ -539,7 +539,7 @@ sub generate-task-list(Int $num? where {!$num.defined or $num > 0}, $wchars?) {
     return $out;
 }
 
-multi task-list(Int $num? where { !$num.defined or $num > 0 }) {
+sub task-list(Int $num? where { !$num.defined or $num > 0 }) {
     update_task_log();    # So we know we've done this.
     my $out = generate-task-list( $num, Nil );
 
