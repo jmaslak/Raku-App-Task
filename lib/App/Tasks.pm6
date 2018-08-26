@@ -50,7 +50,6 @@ our sub start(@args is copy) {
     chdir $*PROGRAM.parent.add("data");
 
     $*OUT.out-buffer = False;
-    $*IN.encoding('latin-1');  # Disable UTF processing
 
     if ! @args.elems {
 
@@ -705,7 +704,7 @@ sub menu-prompt($prompt, @choices) {
 
         printf "{$PBOLDCOLOR}%{$width}d.{$PINFOCOLOR} %s\n", $key, $elem<description>;
     }
-       
+
     say "";
     prompt $prompt;
 
@@ -815,6 +814,9 @@ sub home() {
 
 # Gets terminal size
 sub get-size() {
+    my $oldenc = $*IN.encoding;
+    $*IN.encoding('latin-1');       # Disable UTF processing
+
     my $oldin  := Term::termios.new(fd => 0).getattr;
     my $termin  := Term::termios.new(fd => 0).getattr;
     $termin.makeraw;
@@ -859,6 +861,8 @@ sub get-size() {
 
     # Reset terminal;
     $oldin.setattr(:DRAIN);
+
+    $*IN.encoding($oldenc);     # Restore encoding
 
     return $rowsize, $colsize;
 }
