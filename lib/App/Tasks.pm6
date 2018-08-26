@@ -123,7 +123,7 @@ our sub start(@args is copy) {
                 ) or exit;
                 say "";
             }
-            task_close(@args);
+            task_close(|@args);
         }
         when 'list' { task-list(|@args) }
         # when 'monitor' { task_monitor(@args) }
@@ -483,12 +483,12 @@ sub task_close(Int $tasknum where * ~~ ^100_000) {
     add_note($tasknum);
 
     my $fn = get_task_filename($tasknum);
-    $tasknum = sprintf( "%05d", $tasknum );
+    my Str $taskstr = sprintf( "%05d", $tasknum );
     my ($meta) = $fn ~~ m/^ \d+ '-' (.*) '.task' $/;
-    my $newfn = time.Str ~ "-$tasknum-$*PID-$meta.task";
+    my $newfn = time.Str ~ "-$taskstr-$*PID-$meta.task";
 
     move $fn, "done/$newfn";
-    say "Closed $tasknum";
+    say "Closed $taskstr";
     coalesce_tasks();
 }
 
@@ -583,7 +583,7 @@ sub task_coalesce() {
 }
 
 sub coalesce_tasks() {
-    my @nums = get_task_filenames().map: { S/'-' .* .* '.task' $// };
+    my @nums = get_task_filenames().map: { S/'-' .* .* '.task' $// given .basename };
 
     my $i = 1;
     for @nums.sort( {$^a <=> $^b} ) -> $num {
