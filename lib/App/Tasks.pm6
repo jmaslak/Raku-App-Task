@@ -81,8 +81,8 @@ our sub start(@args is copy) {
 
     my $cmd = @args.shift.fc;
     given $cmd {
-        when 'new' { task_new(|@args) }
-        when 'add' { task_new(|@args) }
+        when 'new' { task-new(|@args) }
+        when 'add' { task-new(|@args) }
         when 'move' {
             if @args[0]:!exists {
                 @args[0] = no-menu-prompt(
@@ -151,10 +151,10 @@ sub get_task_filenames() {
     return getdir().dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
 }
 
-sub task_new() {
+sub task-new() {
     my $seq = get_next_sequence;
 
-    my $subject = prompt( "$P1 Enter Task Subject $P2" ) or exit;
+    my $subject = str-prompt( "$P1 Enter Task Subject $P2" ) or exit;
     $subject ~~ s/^\s+//;
     $subject ~~ s/\s+$//;
     $subject ~~ s:g/\t/ /;
@@ -588,10 +588,12 @@ sub coalesce_tasks() {
     my $i = 1;
     for @nums.sort( {$^a <=> $^b} ) -> $num {
         if $num > $i {
-            my $orig = get_task_filename($num);
-            my $new  = $orig;
-            $new ~~ s/^ \d+ //;
-            $new = sprintf( "%05d%s", $i, $new );
+            my $orig = get_task_filename($num.Int);
+
+            my $newname = S/^ \d+ // given $orig.basename;
+            $newname = sprintf( "%05d%s", $i, $newname);
+            my $new = $orig.parent.add($newname);
+
             move $orig, $new;
             $i++;
         } elsif $i == $num {
