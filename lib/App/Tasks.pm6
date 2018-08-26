@@ -72,7 +72,7 @@ our sub start(@args is copy) {
 
     if @args.elems == 1 {
         if @args[0] ~~ m:s/^ \d+ $/ {
-            @args.unshift('view');    # We view the task if one arg entered
+            @args.unshift: 'view';      # We view the task if one arg entered
         }
     }
 
@@ -609,7 +609,7 @@ sub update_task_log() {
 
     my $oldhash = '';
     if (@terms) {
-        $oldhash = shift(@terms);
+        $oldhash = @terms.shift;
     }
 
     my $tty = get_ttyname();
