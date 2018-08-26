@@ -54,19 +54,18 @@ our sub start(@args is copy) {
     if ! @args.elems {
 
         my @choices = (
-            [ 'Create New Task'            => 'new' ],
-            [ 'Add a Note to a Task'       => 'note' ],
-            [ 'View an Existing Task'      => 'show' ],
-            [ 'List All Tasks'             => 'list' ],
-            [ 'Monitor Task List'          => 'monitor' ],
-            [ 'Move (Reprioritize) a Task' => 'move' ],
-            [ 'Close a Task'               => 'close' ],
-            [ 'Coalesce Tasks'             => 'coalesce' ],
-            [ 'Quit to Shell'              => 'quit' ],
+            [ 'Create New Task',            'new' ],
+            [ 'Add a Note to a Task',       'note' ],
+            [ 'View an Existing Task',      'show' ],
+            [ 'List All Tasks',             'list' ],
+            [ 'Monitor Task List',          'monitor' ],
+            [ 'Move (Reprioritize) a Task', 'move' ],
+            [ 'Close a Task',               'close' ],
+            [ 'Coalesce Tasks',             'coalesce' ],
+            [ 'Quit to Shell',              'quit' ],
         );
 
         say "{$PCOLOR}Please select an option...\n";
-        say "\n";
         my $command = menu-prompt("$P1 $P2", @choices);
         @args.push($command // 'quit');
 
@@ -708,7 +707,7 @@ sub menu-prompt($prompt, @choices) {
         %elems{$cnt} = { description => $choice[0], value => $choice[1] };
     }
 
-    my $width = log10($cnt) + 1;
+    my $width = Int(log10($cnt) + 1);
 
     for %elems.keys.sort -> $key {
         my $elem = %elems{$key};
