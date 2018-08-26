@@ -11,6 +11,7 @@ use File::Temp;
 use NativeCall;
 use P5getpriority;
 use P5localtime;
+use Term::termios;
 use Terminal::ANSIColor;
 
 my $P1         = '[task]';
@@ -49,6 +50,7 @@ our sub start(@args is copy) {
     chdir $*PROGRAM.parent.add("data");
 
     $*OUT.out-buffer = False;
+    $*IN.encoding('latin-1');  # Disable UTF processing
 
     if ! @args.elems {
 
@@ -126,7 +128,7 @@ our sub start(@args is copy) {
             task_close(|@args);
         }
         when 'list' { task-list(|@args) }
-        # when 'monitor' { task_monitor(@args) }
+        when 'monitor' { task-monitor(|@args) }
         when 'coalesce' { task_coalesce(|@args) }
         default {
             say "WRONG USAGE";
@@ -513,7 +515,7 @@ sub display_with_pager($description, $contents) {
     }
 }
 
-sub generate-task-list(Int $num? where {!$num.defined or $num > 0}, $wchars?) {
+sub generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wchars?) {
     my (@d) = get_task_filenames();
     my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
@@ -546,36 +548,33 @@ sub task-list(Int $num? where { !$num.defined or $num > 0 }) {
     display_with_pager( "Tasklist", $out );
 }
 
-#--sub task_monitor() {
-#--    my $terminal = Term::Cap->Tgetent( { OSPEED => 9600 } );
-#--    Term::ReadKey::ReadMode('raw');
-#--
-#--    my $clear = $terminal->Tputs('cl');
-#--
-#--    my $last = 'x';    # Not '' because then we won't try to draw the initial
-#--                       # screen - there will be no "type any character" prompt!
-#--    while (1) {
-#--        my ( $wchar, $hchar, $wpixel, $hpixel ) = GetTerminalSize(*STDOUT);
-#--        if ( !defined($wchar) ) { die "Terminal not supported"; }
-#--
-#--        update_task_log();    # So we know we've done this.
-#--        my $out = localtime() . ' local / ' . gmtime() . " UTC\n\n";
-#--
-#--        $out ~= generate-task-list( $hchar - 1, $wchar - 1 );
-#--        if ( $out ne $last ) {
-#--            $last = $out;
-#--            print $clear;
-#--            print $out;
-#--            print color("reset") . "     ...Type any character to exit...  ";
-#--        }
+sub task-monitor() {
+    my $last = 'x';    # Not '' because then we won't try to draw the initial
+                       # screen - there will be no "type any character" prompt!
+    loop (;;) {
+        my ($rows, $cols) = get-size();
+        if !defined $cols { die "Terminal not supported" }
+
+        update_task_log();    # So we know we've done this.
+        my $out = localtime(:scalar) ~ ' local / ' ~ gmtime(:scalar) ~ " UTC\n\n";
+
+        $out ~= generate-task-list( $rows - 3, $cols - 1 );
+        if $out ne $last {
+            $last = $out;
+            clear;
+            print $out;
+            print color("reset");
+            print "     ...Type any character to exit...  ";
+        }
 #--        if ( defined( Term::ReadKey::ReadKey(1) ) ) {
 #--            Term::ReadKey::ReadMode('restore');
 #--            say "";
 #--            say "Exiting.";
 #--            exit;
 #--        }
-#--    }
-#--}
+        sleep .1;
+    }
+}
 
 sub task_coalesce() {
     coalesce_tasks();
@@ -803,6 +802,65 @@ sub prompt($prompt) {
     print $PCOLOR;
     print $prompt;
     print color('reset');
+}
+
+sub clear() {
+    print 27.chr, '[2J';
+    home;
+}
+
+sub home() {
+    print 27.chr, "[;H";
+}
+
+# Gets terminal size
+sub get-size() {
+    my $oldin  := Term::termios.new(fd => 0).getattr;
+    my $termin  := Term::termios.new(fd => 0).getattr;
+    $termin.makeraw;
+    $termin.setattr(:DRAIN);
+
+    # Save cursor position
+    print 27.chr, "[s";
+
+    # Move to an absurd position using CUP
+    print 27.chr, "[9999;9999H";
+
+    # Where is the cursor? Ask for the DSR
+    print 27.chr, "[6n";
+
+    # Unsave cursor position
+    print 27.chr, "[u";
+
+    # We look for a CPR (Active Position Report)
+    my Int $rowsize;
+    my Int $colsize;
+    loop (;;) {
+        while $*IN.getc.ord ≠ 27 { }
+        if $*IN.getc ne '[' { next }
+
+        # Okay, we have a CPR.
+        # Get lines
+        my $lines = '';
+        my $c;
+        while ($c = $*IN.getc) ~~ /^\d$/ { $lines ~= $c }
+
+        # Get cols
+        my $cols = '';
+        while ($c = $*IN.getc) ~~ /^\d$/ { $cols ~= $c }
+
+        if $lines ≠ '' and $cols ≠ '' {
+            $rowsize = Int($lines);
+            $colsize = Int($cols);
+
+            last;
+        }
+    }
+
+    # Reset terminal;
+    $oldin.setattr(:DRAIN);
+
+    return $rowsize, $colsize;
 }
 
 sub isatty(uint32) returns int32 is native { * };
