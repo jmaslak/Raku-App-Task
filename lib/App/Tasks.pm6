@@ -25,6 +25,13 @@ my $PINFOCOLOR = '';
 my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
 my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
 
+# Fix %*ENV<SHELL> so LESS doesn't give error messages
+if %*ENV<SHELL>:exists {
+    if %*ENV<SHELL> eq '-bash' {
+        %*ENV<SHELL> = 'bash';
+    }
+}
+
 my %H_INFO = (
     title => {
         order   => 1,
@@ -39,10 +46,10 @@ my %H_INFO = (
 
 my $H_LEN = %H_INFO.values.map( { .<display>.chars } );
 
-sub start(@args is copy) {
+our sub start(@args is copy) {
     chdir $*PROGRAM.parent.add("data");
 
-    $*OUT.out-buffer(False);
+    $*OUT.out-buffer = False;
 
     if ! @args.elems {
 
@@ -72,26 +79,26 @@ sub start(@args is copy) {
         }
     }
 
-    my @validtasks = get_task_filenames().map( { S/\- .* $//; int($_); } );
+    my @validtasks = get_task_filenames().map( { Int( S/\- .* $// ); } );
 
     my $cmd = @args.shift.fc;
     given $cmd {
         when 'new' { task_new(|@args) }
         when 'add' { task_new(|@args) }
         when 'move' {
-            if @args[0]:!EXISTS {
+            if @args[0]:!exists {
                 @args[0] = no-menu-prompt(
                     "$P1 Please enter source task number to move $P2",
                     @validtasks
                 ) or exit;
             }
-            if @args[1]:!EXISTS {
+            if @args[1]:!exists {
                 @args[1] = uint-prompt( "$P1 Please enter desired location of task $P2" ) or exit;
             }
             task_move(|@args);
         }
         when $_ ~~ 'show' or $_ ~~ 'view' {
-            if @args[0]:!EXISTS {
+            if @args[0]:!exists {
                 @args[0] = no-menu-prompt(
                     "$P1 Please enter task number to show $P2",
                     @validtasks
@@ -101,7 +108,7 @@ sub start(@args is copy) {
             task_show(|@args);
         }
         when 'note' {
-            if @args[0]:!EXISTS {
+            if @args[0]:!exists {
                 @args[0] = no-menu-prompt(
                     "$P1 Please enter task number to modify $P2",
                     @validtasks
@@ -111,7 +118,7 @@ sub start(@args is copy) {
             task_add_note(|@args);
         }
         when $_ ~~ 'close' or $_ ~~ 'commit' {
-            if @args[0]:!EXISTS {
+            if @args[0]:!exists {
                 @args[0] = prompt(
                     "$P1 Please enter task number to close $P2",
                     [@validtasks]
@@ -120,7 +127,7 @@ sub start(@args is copy) {
             }
             task_close(@args);
         }
-        when 'list' { task_list(|@args) }
+        when 'list' { task-list(|@args) }
         # when 'monitor' { task_monitor(@args) }
         when 'coalesce' { task_coalesce(|@args) }
         default {
@@ -164,7 +171,7 @@ sub task_new() {
     }
 
     my $tm = time.Str;
-    my $fh = "{$seq}-none.task".IO.open;
+    my $fh = "{$seq}-none.task".IO.open :w;
     $fh.say: "Title: $subject";
     $fh.say: "Created: $tm";
 
@@ -178,11 +185,11 @@ sub task_new() {
     say "Created task $seq";
 }
 
-sub get_task_filename(Int $task where * ~~ ^100_000) {
-    $task = sprintf( "%05d", $task );
+sub get_task_filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
+    my Str $task = sprintf( "%05d", $taskint );
 
     my @d = get_task_filenames();
-    my @fn = @d.grep: { m/^ $task '-'/ };
+    my @fn = @d.grep: { .basename ~~ m/^ $task '-'/ };
 
     if @fn.elems > 1  { die "More than one name matches\n"; }
     if @fn.elems == 1 { return @fn[0]; }
@@ -241,12 +248,12 @@ sub task_move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
 }
 
 sub task_show(Int $tasknum where * ~~ ^100_000) {
-    my $task = read_task($tasknum);
+    my $task = read-task($tasknum);
 
     my $out    = '';
     my $header = $task<header>;
     for %H_INFO.keys.sort( { %H_INFO{$^a}<order> <=> %H_INFO{$^b}<order> } ) -> $key {
-        if $header{$key}:EXISTS {
+        if $header{$key}:exists {
             $out ~= sprint_header_line( $key, $header{$key} );
         }
     }
@@ -260,7 +267,7 @@ sub task_show(Int $tasknum where * ~~ ^100_000) {
     display_with_pager( "Task $tasknum", $out );
 }
 
-sub read_task(Int $tasknum where * ~~ ^100_000) {
+sub read-task(Int $tasknum where * ~~ ^100_000) {
     my $task = {};
     $task<header> = Hash.new;
     $task<body>   = [];
@@ -273,19 +280,22 @@ sub read_task(Int $tasknum where * ~~ ^100_000) {
 
         if ( $line ~~ m/^ '--- ' \d+ $/ ) {
             @lines.unshift: "$line\n";
-            read_task_body( $task, @lines );
+            read-task-body( $task, @lines );
+            @lines = ();
             next;
         }
 
         # We know we are in the header.
-        my ( $field, $value ) = $line ~~ m/^ ( <-[:]>+ ) ':' \s* ( .* ) \s* $/;
-        $task<header>{ $field.fc } = $value;
+        $line ~~ /^ ( <-[:]> + ) ':' \s* ( .* ) \s* $/;
+        my ($field, $value) = @();
+
+        $task<header>{ $field.Str.fc } = $value.Str;
     }
 
     return $task;
 }
 
-sub read_task_body(Int $task where * ~~ ^100_000, @lines) {
+sub read-task-body(Hash $task is rw, @lines) {
     for @lines -> $line {
         chomp($line);
 
@@ -299,12 +309,14 @@ sub read_task_body(Int $task where * ~~ ^100_000, @lines) {
             next;
         }
 
-        $task<body>[*-1]<body> ~= $line ~ "\n";
+        if $task<body> {
+            $task<body>[*-1]<body> ~= $line ~ "\n";
+        }
     }
 }
 
 sub sprint_header_line($header, $value) {
-    if %H_INFO{$header}<type>:EXISTS and %H_INFO{$header}<type> eq 'date' {
+    if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'date' {
         $value = localtime($value, :scalar);
     }
 
@@ -497,11 +509,11 @@ sub display_with_pager($description, $contents) {
         $tmp.print: $contents;
         $tmp.close;
 
-        $description = "$description ( press h for help or q to quit ) ";
+        my $out = "$description ( press h for help or q to quit ) ";
 
         my @pager;
-        for @PAGERCMD -> $part {
-            $part ~~ s:g/'%PROMPT%'/$description/;
+        for @PAGERCMD -> $part is copy {
+            $part ~~ s:g/'%PROMPT%'/$out/;
             $part ~~ s:g/'%FILENAME%'/$filename/;
             @pager.push: $part;
         }
@@ -511,13 +523,13 @@ sub display_with_pager($description, $contents) {
     }
 }
 
-sub generate_task_list(Int $num where * > 0, $wchars) {
+sub generate-task-list(Int $num? where {!$num.defined or $num > 0}, $wchars?) {
     my (@d) = get_task_filenames();
-    my (@tasknums) = @d.map: { m/^ (\d+) / }
+    my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
     my $out = '';
     for @tasknums.sort( { $^a <=> $^b } ) -> $tasknum {
-        my $task = read_task($tasknum);
+        my $task = read-task($tasknum);
 
         my $title = $task<header><title>;
         my $desc  = $title;
@@ -538,9 +550,9 @@ sub generate_task_list(Int $num where * > 0, $wchars) {
     return $out;
 }
 
-sub task_list(Int $num where * > 0) {
+multi task-list(Int $num? where { !$num.defined or $num > 0 }) {
     update_task_log();    # So we know we've done this.
-    my $out = generate_task_list( $num, Nil );
+    my $out = generate-task-list( $num, Nil );
 
     display_with_pager( "Tasklist", $out );
 }
@@ -560,7 +572,7 @@ sub task_list(Int $num where * > 0) {
 #--        update_task_log();    # So we know we've done this.
 #--        my $out = localtime() . ' local / ' . gmtime() . " UTC\n\n";
 #--
-#--        $out ~= generate_task_list( $hchar - 1, $wchar - 1 );
+#--        $out ~= generate-task-list( $hchar - 1, $wchar - 1 );
 #--        if ( $out ne $last ) {
 #--            $last = $out;
 #--            print $clear;
@@ -623,7 +635,7 @@ sub update_task_log() {
         @terms = ();
     }
 
-    my $fh = '.taskview.status'.IO.open;
+    my $fh = '.taskview.status'.IO.open :w;
     $fh.say: $sha;
     for @terms -> $term {
         $fh.say: $term;
@@ -663,7 +675,7 @@ sub check_task_log() {
 }
 
 sub get_taskhash() {
-    my $tl = generate_task_list( Nil, Nil );
+    my $tl = generate-task-list( Int, Int );
     return sha1-hex($tl);
 }
 
@@ -696,7 +708,7 @@ sub menu-prompt($prompt, @choices) {
         %elems{$cnt} = { description => $choice[0], value => $choice[1] };
     }
 
-    my $width = log10($cnt);
+    my $width = log10($cnt) + 1;
 
     for %elems.keys.sort -> $key {
         my $elem = %elems{$key};
@@ -708,7 +720,7 @@ sub menu-prompt($prompt, @choices) {
     print $prompt;
 
     for lines() -> $line {
-        if %elems{$line}:EXISTS {
+        if %elems{$line}:exists {
             return %elems{$line}<value>;
         }
 
