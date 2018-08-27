@@ -11,6 +11,7 @@ use lib $*PROGRAM.parent.add("lib");
 use App::Tasks;
 
 sub MAIN(+@args) {
-    App::Tasks::start(@args);
+    my $task = App::Tasks.new();
+    $task.start(@args);
 }
 
