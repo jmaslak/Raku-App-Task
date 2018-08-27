@@ -21,7 +21,6 @@ my $P2         = '> ';
 my $PCOLOR     = color('reset bold cyan');
 my $PBOLDCOLOR = color('reset bold green');
 my $PINFOCOLOR = color('reset cyan');   # used to have dark
-# my @PSTYLE     = ( -style => "reset bold cyan" );
 
 my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
 my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
@@ -79,7 +78,7 @@ our sub start(@args is copy) {
         }
     }
 
-    my @validtasks = get_task_filenames().map( { Int( S/\- .* $// ); } );
+    my @validtasks = get-task-filenames().map( { Int( S/\- .* $// ); } );
 
     my $cmd = @args.shift.fc;
     given $cmd {
@@ -95,7 +94,7 @@ our sub start(@args is copy) {
             if @args[1]:!exists {
                 @args[1] = uint-prompt( "$P1 Please enter desired location of task $P2" ) or exit;
             }
-            task_move(|@args);
+            task-move(|@args);
         }
         when $_ ~~ 'show' or $_ ~~ 'view' {
             if @args[0]:!exists {
@@ -105,7 +104,7 @@ our sub start(@args is copy) {
                 ) or exit;
                 say "";
             }
-            task_show(|@args);
+            task-show(|@args);
         }
         when 'note' {
             if @args[0]:!exists {
@@ -115,7 +114,7 @@ our sub start(@args is copy) {
                 ) or exit;
                 say "";
             }
-            task_add_note(|@args);
+            task-add-note(|@args);
         }
         when $_ ~~ 'close' or $_ ~~ 'commit' {
             if @args[0]:!exists {
@@ -125,19 +124,19 @@ our sub start(@args is copy) {
                 ) or exit;
                 say "";
             }
-            task_close(|@args);
+            task-close(|@args);
         }
         when 'list' { task-list(|@args) }
         when 'monitor' { task-monitor(|@args) }
-        when 'coalesce' { task_coalesce(|@args) }
+        when 'coalesce' { task-coalesce(|@args) }
         default {
             say "WRONG USAGE";
         }
     }
 }
 
-sub get_next_sequence() {
-    my @d = get_task_filenames();
+sub get-next-sequence() {
+    my @d = get-task-filenames();
 
     my $seq = 1;
     if @d.elems {
@@ -149,12 +148,12 @@ sub get_next_sequence() {
     return sprintf "%05d", $seq;
 }
 
-sub get_task_filenames() {
+sub get-task-filenames() {
     return getdir().dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
 }
 
 sub task-new() {
-    my $seq = get_next_sequence;
+    my $seq = get-next-sequence;
 
     my $subject = str-prompt( "$P1 Enter Task Subject $P2" ) or exit;
     $subject ~~ s/^\s+//;
@@ -163,9 +162,9 @@ sub task-new() {
     if ( $subject eq '' ) { say "Blank subject, exiting."; exit; }
     say "";
 
-    my $body = get_note_from_user();
+    my $body = get-note-from-user();
 
-    if ( !confirm_save() ) {
+    if ( !confirm-save() ) {
         say "Aborting.";
         exit;
     }
@@ -185,10 +184,10 @@ sub task-new() {
     say "Created task $seq";
 }
 
-sub get_task_filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
+sub get-task-filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
     my Str $task = sprintf( "%05d", $taskint );
 
-    my @d = get_task_filenames();
+    my @d = get-task-filenames();
     my @fn = @d.grep: { .basename ~~ m/^ $task '-'/ };
 
     if @fn.elems > 1  { die "More than one name matches\n"; }
@@ -196,26 +195,26 @@ sub get_task_filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
     return;
 }
 
-sub task_move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
-    if ( !check_task_log() ) {
+sub task-move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
+    if ( !check-task-log() ) {
         say "Can't move task - task numbers may have changed since last 'task list'";
         return;
     }
 
-    my $end = get_next_sequence();
+    my $end = get-next-sequence();
     if ( $new >= $end ) {
         $new = $end - 1;
     }
     if ( $new < 1 ) { $new = 1; }
 
-    my $oldfn = get_task_filename($old) or die("Task not found");
+    my $oldfn = get-task-filename($old) or die("Task not found");
     my $newfn = $oldfn;
     $newfn ~~ s/^ \d+ '-'/-/;
     $newfn = sprintf( "%05d%s", $new, $newfn );
 
     move $oldfn, "$newfn.tmp";
 
-    my @d = get_task_filenames();
+    my @d = get-task-filenames();
 
     if ( $new < $old ) { @d = reverse @d; }
     for @d -> $f {
@@ -247,24 +246,24 @@ sub task_move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
 
 }
 
-sub task_show(Int $tasknum where * ~~ ^100_000) {
+sub task-show(Int $tasknum where * ~~ ^100_000) {
     my $task = read-task($tasknum);
 
     my $out    = '';
     my $header = $task<header>;
     for %H_INFO.keys.sort( { %H_INFO{$^a}<order> <=> %H_INFO{$^b}<order> } ) -> $key {
         if $header{$key}:exists {
-            $out ~= sprint_header_line( $key, $header{$key} );
+            $out ~= sprint-header-line( $key, $header{$key} );
         }
     }
     $out ~= "\n";
 
     for |$task<body> -> $body {
-        $out ~= sprint_body($body);
+        $out ~= sprint-body($body);
         $out ~= "\n";
     }
 
-    display_with_pager( "Task $tasknum", $out );
+    display-with-pager( "Task $tasknum", $out );
 }
 
 sub read-task(Int $tasknum where * ~~ ^100_000) {
@@ -273,7 +272,7 @@ sub read-task(Int $tasknum where * ~~ ^100_000) {
     $task<body>   = [];
     $task<number> = $tasknum;
 
-    my @lines = get_task_filename($tasknum).IO.lines;
+    my @lines = get-task-filename($tasknum).IO.lines;
     while (@lines) {
         my $line = @lines.shift;
 
@@ -312,7 +311,7 @@ sub read-task-body(Hash $task is rw, @lines) {
     }
 }
 
-sub sprint_header_line($header, $value is copy) {
+sub sprint-header-line($header, $value is copy) {
     if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'date' {
         $value = localtime($value, :scalar);
     }
@@ -331,7 +330,7 @@ sub sprint_header_line($header, $value is copy) {
     return $out;
 }
 
-sub sprint_body($body) {
+sub sprint-body($body) {
     my $out =
         color("bold red") ~ "["
       ~ localtime($body<date>, :scalar) ~ "]"
@@ -348,30 +347,30 @@ sub sprint_body($body) {
     return $out;
 }
 
-sub task_add_note(Int $tasknum where * ~~ ^100_000) {
-    if ( !check_task_log() ) {
+sub task-add-note(Int $tasknum where * ~~ ^100_000) {
+    if ( !check-task-log() ) {
         say "Can't add note - task numbers may have changed since last 'task list'";
         return;
     }
 
-    add_note($tasknum);
+    add-note($tasknum);
 }
 
-sub add_note(Int $tasknum where * ~~ ^100_000) {
-    task_show($tasknum);
+sub add-note(Int $tasknum where * ~~ ^100_000) {
+    task-show($tasknum);
 
-    my $note = get_note_from_user();
+    my $note = get-note-from-user();
     if ( !defined($note) ) {
         say "Not adding note";
         return;
     }
 
-    if ( !( confirm_save() ) ) {
+    if ( !( confirm-save() ) ) {
         say "Aborting.";
         exit;
     }
 
-    my $fn = get_task_filename($tasknum) or die("Task not found");
+    my $fn = get-task-filename($tasknum) or die("Task not found");
     my $fh = $fn.open(:a);
     $fh.say: "--- " ~ time;
     $fh.say: $note;
@@ -380,22 +379,22 @@ sub add_note(Int $tasknum where * ~~ ^100_000) {
     say "Updated task $tasknum";
 }
 
-sub confirm_save() {
+sub confirm-save() {
     my $result = yn-prompt(
         "$P1 Save This Task [Y/n]? $P2"
     );
     return $result;
 }
 
-sub get_note_from_user() {
+sub get-note-from-user() {
     if ! @EDITORCMD {
-        return get_note_from_user_internal();
+        return get-note-from-user-internal();
     } else {
-        return get_note_from_user_external();
+        return get-note-from-user-external();
     }
 }
 
-sub get_note_from_user_internal() {
+sub get-note-from-user-internal() {
     print color("bold cyan") ~ "Enter Note Details" ~ color("reset");
     say color("cyan")
       ~ " (Use '.' on a line by itself when done)"
@@ -419,7 +418,7 @@ sub get_note_from_user_internal() {
     return $body;
 }
 
-sub get_note_from_user_external() {
+sub get-note-from-user-external() {
     # External editors may pop up full screen, so you won't see any
     # history.  This helps mitigate that.
     my $result = yn-prompt( "$P1 Add a Note to This Task [Y/n]? $P2" );
@@ -476,26 +475,26 @@ sub get_note_from_user_external() {
     }
 }
 
-sub task_close(Int $tasknum where * ~~ ^100_000) {
-    if ( !check_task_log() ) {
+sub task-close(Int $tasknum where * ~~ ^100_000) {
+    if ( !check-task-log() ) {
         say "Can't close task - task numbers may have changed since last 'task list'";
         return;
     }
 
-    add_note($tasknum);
+    add-note($tasknum);
 
-    my $fn = get_task_filename($tasknum);
+    my $fn = get-task-filename($tasknum);
     my Str $taskstr = sprintf( "%05d", $tasknum );
     my ($meta) = $fn ~~ m/^ \d+ '-' (.*) '.task' $/;
     my $newfn = time.Str ~ "-$taskstr-$*PID-$meta.task";
 
     move $fn, "done/$newfn";
     say "Closed $taskstr";
-    coalesce_tasks();
+    coalesce-tasks();
 }
 
 # XXX Need a non-colorized option
-sub display_with_pager($description, $contents) {
+sub display-with-pager($description, $contents) {
     if @PAGERCMD.elems {
         my ($filename, $tmp) = tempfile(:unlink);
         $tmp.print: $contents;
@@ -516,7 +515,7 @@ sub display_with_pager($description, $contents) {
 }
 
 sub generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wchars?) {
-    my (@d) = get_task_filenames();
+    my (@d) = get-task-filenames();
     my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
     my $out = '';
@@ -542,10 +541,10 @@ sub generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wch
 }
 
 sub task-list(Int $num? where { !$num.defined or $num > 0 }) {
-    update_task_log();    # So we know we've done this.
+    update-task-log();    # So we know we've done this.
     my $out = generate-task-list( $num, Nil );
 
-    display_with_pager( "Tasklist", $out );
+    display-with-pager( "Tasklist", $out );
 }
 
 sub task-monitor() {
@@ -571,7 +570,7 @@ sub task-monitor-show() {
     if ($last = 'x') {
         if !defined $cols { die "Terminal not supported" }
 
-        update_task_log();    # So we know we've done this.
+        update-task-log();    # So we know we've done this.
     }
 
     my $out = localtime(:scalar) ~ ' local / ' ~ gmtime(:scalar) ~ " UTC\n\n";
@@ -586,18 +585,18 @@ sub task-monitor-show() {
     }
 }
 
-sub task_coalesce() {
-    coalesce_tasks();
+sub task-coalesce() {
+    coalesce-tasks();
     say "Coalesced tasks";
 }
 
-sub coalesce_tasks() {
-    my @nums = get_task_filenames().map: { S/'-' .* .* '.task' $// given .basename };
+sub coalesce-tasks() {
+    my @nums = get-task-filenames().map: { S/'-' .* .* '.task' $// given .basename };
 
     my $i = 1;
     for @nums.sort( {$^a <=> $^b} ) -> $num {
         if $num > $i {
-            my $orig = get_task_filename($num.Int);
+            my $orig = get-task-filename($num.Int);
 
             my $newname = S/^ \d+ // given $orig.basename;
             $newname = sprintf( "%05d%s", $i, $newname);
@@ -611,8 +610,8 @@ sub coalesce_tasks() {
     }
 }
 
-sub update_task_log() {
-    my $sha = get_taskhash();
+sub update-task-log() {
+    my $sha = get-taskhash();
 
     my @terms;
     if ".taskview.status".IO.f {
@@ -624,7 +623,7 @@ sub update_task_log() {
         $oldhash = @terms.shift;
     }
 
-    my $tty = get_ttyname();
+    my $tty = get-ttyname();
 
     if $oldhash eq $sha {
         # No need to update...
@@ -645,12 +644,12 @@ sub update_task_log() {
 }
 
 # Returns true if the task log is okay for this process.
-sub check_task_log() {
+sub check-task-log() {
     # Not a TTY?  Don't worry about this.
     # if ( !isatty(0) ) { return 1; }
     if !isatty() { return 1; }
 
-    my $sha = get_taskhash();
+    my $sha = get-taskhash();
 
     my @terms;
     if ".taskview.status".IO.f {
@@ -666,7 +665,7 @@ sub check_task_log() {
     if ( $oldhash ne $sha ) { return; }
 
     # If terminal in list, it's cool.
-    my $tty = get_ttyname();
+    my $tty = get-ttyname();
     if @terms.grep( { $^a eq $tty } ) {
         return 1;
     }
@@ -675,12 +674,12 @@ sub check_task_log() {
     return;
 }
 
-sub get_taskhash() {
+sub get-taskhash() {
     my $tl = generate-task-list( Int, Int );
     return sha1-hex($tl);
 }
 
-sub get_ttyname() {
+sub get-ttyname() {
     my $tty = getppid() ~ ':';
     # if isatty(0) {
     if isatty() {
