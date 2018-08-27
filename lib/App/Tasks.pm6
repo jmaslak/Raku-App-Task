@@ -12,6 +12,7 @@ use NativeCall;
 use P5getpriority;
 use P5localtime;
 use Term::termios;
+use Term::ReadKey;
 use Terminal::ANSIColor;
 
 my $P1         = '[task]';
@@ -548,30 +549,40 @@ sub task-list(Int $num? where { !$num.defined or $num > 0 }) {
 }
 
 sub task-monitor() {
-    my $last = 'x';    # Not '' because then we won't try to draw the initial
-                       # screen - there will be no "type any character" prompt!
-    loop (;;) {
-        my ($rows, $cols) = get-size();
+    task-monitor-show();
+
+    react {
+        whenever key-pressed(:!echo) {
+            say "";
+            say "Exiting.";
+            done;
+        }
+        whenever Supply.interval(1) {
+            task-monitor-show();
+        }
+    }
+}
+
+sub task-monitor-show() {
+    state $last = 'x';  # Not '' because then we won't try to draw the initial
+                        # screen - there will be no "type any character" prompt!
+
+    state ($rows, $cols) = get-size();
+    if ($last = 'x') {
         if !defined $cols { die "Terminal not supported" }
 
         update_task_log();    # So we know we've done this.
-        my $out = localtime(:scalar) ~ ' local / ' ~ gmtime(:scalar) ~ " UTC\n\n";
+    }
 
-        $out ~= generate-task-list( $rows - 3, $cols - 1 );
-        if $out ne $last {
-            $last = $out;
-            clear;
-            print $out;
-            print color("reset");
-            print "     ...Type any character to exit...  ";
-        }
-#--        if ( defined( Term::ReadKey::ReadKey(1) ) ) {
-#--            Term::ReadKey::ReadMode('restore');
-#--            say "";
-#--            say "Exiting.";
-#--            exit;
-#--        }
-        sleep .1;
+    my $out = localtime(:scalar) ~ ' local / ' ~ gmtime(:scalar) ~ " UTC\n\n";
+
+    $out ~= generate-task-list( $rows - 3, $cols - 1 );
+    if $out ne $last {
+        $last = $out;
+        clear;
+        print $out;
+        print color("reset");
+        print "     ...Type any character to exit...  ";
     }
 }
 
@@ -636,7 +647,8 @@ sub update_task_log() {
 # Returns true if the task log is okay for this process.
 sub check_task_log() {
     # Not a TTY?  Don't worry about this.
-    if ( !isatty(0) ) { return 1; }
+    # if ( !isatty(0) ) { return 1; }
+    if !isatty() { return 1; }
 
     my $sha = get_taskhash();
 
@@ -670,7 +682,8 @@ sub get_taskhash() {
 
 sub get_ttyname() {
     my $tty = getppid() ~ ':';
-    if isatty(0) {
+    # if isatty(0) {
+    if isatty() {
         $tty ~= ttyname(0);
     }
 
@@ -867,5 +880,9 @@ sub get-size() {
     return $rowsize, $colsize;
 }
 
-sub isatty(uint32) returns int32 is native { * };
+sub isatty(-->Bool) {
+    return $*IN.t;
+}
+
+# sub isatty(uint32) returns int32 is native { * };
 sub ttyname(uint32) returns Str is native { * };
