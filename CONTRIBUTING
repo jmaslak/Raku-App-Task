@@ -18,10 +18,10 @@ If you want to help:
 
 Some things you can do that would make me smile:
 
-  * Feel free to look at the TODO file - I've pointed out some things I
-    want to do with the module.  Feel free to do any of them (but if it
-    is a bigger item, you might jot me a note first so that I don't
-    accidentally duplicate your effort!)
+  * Feel free to look at the tasks in the distro - I've pointed out some
+    things I want to do with the module.  Feel free to do any of them
+    (but if it is a bigger item, you might jot me a note first so that I
+    don't accidentally duplicate your effort!)
   * Write tests for things that are known to be broken.  Mark those as
     "todo" tests so that the failures do not cause test failures.
   * Improvements to documentation are always appreciated
