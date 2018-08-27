@@ -25,6 +25,9 @@ my $PINFOCOLOR = color('reset cyan');   # used to have dark
 my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
 my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
 
+my $LOCK;
+my $LOCKCNT = 0;
+
 # Fix %*ENV<SHELL> so LESS doesn't give error messages
 if %*ENV<SHELL>:exists {
     if %*ENV<SHELL> eq '-bash' {
@@ -48,6 +51,8 @@ my $H_LEN = %H_INFO.values.map( { .<display>.chars } ).max;
 
 our sub start(@args is copy) {
     chdir $*PROGRAM.parent.add("data");
+
+    $LOCK = ".taskview.lock".IO.open(:a);
 
     $*OUT.out-buffer = False;
 
@@ -133,9 +138,12 @@ our sub start(@args is copy) {
             say "WRONG USAGE";
         }
     }
+
+    $LOCK.close;
 }
 
 sub get-next-sequence() {
+    add-lock();
     my @d = get-task-filenames();
 
     my $seq = 1;
@@ -144,6 +152,7 @@ sub get-next-sequence() {
         $seq ~~ s/ '-' .* $//;
         $seq++;
     }
+    remove-lock();
 
     return sprintf "%05d", $seq;
 }
@@ -153,6 +162,8 @@ sub get-task-filenames() {
 }
 
 sub task-new() {
+    add-lock();
+
     my $seq = get-next-sequence;
 
     my $subject = str-prompt( "$P1 Enter Task Subject $P2" ) or exit;
@@ -166,6 +177,7 @@ sub task-new() {
 
     if ( !confirm-save() ) {
         say "Aborting.";
+        $LOCK.unlock;
         exit;
     }
 
@@ -181,22 +193,31 @@ sub task-new() {
 
     $fh.close;
 
+    remove-lock();
+
     say "Created task $seq";
 }
 
 sub get-task-filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
+    add-lock();
+
     my Str $task = sprintf( "%05d", $taskint );
 
     my @d = get-task-filenames();
     my @fn = @d.grep: { .basename ~~ m/^ $task '-'/ };
 
-    if @fn.elems > 1  { die "More than one name matches\n"; }
-    if @fn.elems == 1 { return @fn[0]; }
+    if @fn.elems > 1  { remove-lock(); die "More than one name matches\n"; }
+    if @fn.elems == 1 { remove-lock(); return @fn[0]; }
+
+    remove-lock();
     return;
 }
 
 sub task-move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
+    add-lock();
+
     if ( !check-task-log() ) {
+        remove-lock();
         say "Can't move task - task numbers may have changed since last 'task list'";
         return;
     }
@@ -244,9 +265,12 @@ sub task-move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
 
     move "$newfn.tmp", $newfn;
 
+    remove-lock();
 }
 
 sub task-show(Int $tasknum where * ~~ ^100_000) {
+    add-lock();
+
     my $task = read-task($tasknum);
 
     my $out    = '';
@@ -263,16 +287,20 @@ sub task-show(Int $tasknum where * ~~ ^100_000) {
         $out ~= "\n";
     }
 
+    remove-lock();
+
     display-with-pager( "Task $tasknum", $out );
 }
 
 sub read-task(Int $tasknum where * ~~ ^100_000) {
+    add-lock();
+
     my $task = {};
     $task<header> = Hash.new;
     $task<body>   = [];
     $task<number> = $tasknum;
 
-    my @lines = get-task-filename($tasknum).IO.lines;
+    my @lines = get-task-filename($tasknum).lines;
     while (@lines) {
         my $line = @lines.shift;
 
@@ -290,10 +318,14 @@ sub read-task(Int $tasknum where * ~~ ^100_000) {
         $task<header>{ $field.Str.fc } = $value.Str;
     }
 
+    remove-lock();
+
     return $task;
 }
 
 sub read-task-body(Hash $task is rw, @lines) {
+    add-lock();
+
     for @lines -> $line {
         if $line ~~ m/^ '--- ' (\d+) $/ {
             my $bodydate = $0.Int;
@@ -309,6 +341,8 @@ sub read-task-body(Hash $task is rw, @lines) {
             $task<body>[*-1]<body> ~= $line ~ "\n";
         }
     }
+
+    remove-lock();
 }
 
 sub sprint-header-line($header, $value is copy) {
@@ -348,24 +382,33 @@ sub sprint-body($body) {
 }
 
 sub task-add-note(Int $tasknum where * ~~ ^100_000) {
+    add-lock();
+
     if ( !check-task-log() ) {
+        remove-lock();
         say "Can't add note - task numbers may have changed since last 'task list'";
         return;
     }
 
     add-note($tasknum);
+
+    remove-lock();
 }
 
 sub add-note(Int $tasknum where * ~~ ^100_000) {
+    add-lock();
+
     task-show($tasknum);
 
     my $note = get-note-from-user();
     if ( !defined($note) ) {
+        remove-lock();
         say "Not adding note";
         return;
     }
 
     if ( !( confirm-save() ) ) {
+        remove-lock();
         say "Aborting.";
         exit;
     }
@@ -375,6 +418,8 @@ sub add-note(Int $tasknum where * ~~ ^100_000) {
     $fh.say: "--- " ~ time;
     $fh.say: $note;
     $fh.close;
+
+    remove-lock();
 
     say "Updated task $tasknum";
 }
@@ -476,7 +521,10 @@ sub get-note-from-user-external() {
 }
 
 sub task-close(Int $tasknum where * ~~ ^100_000) {
+    add-lock();
+
     if ( !check-task-log() ) {
+        remove-lock();
         say "Can't close task - task numbers may have changed since last 'task list'";
         return;
     }
@@ -491,6 +539,8 @@ sub task-close(Int $tasknum where * ~~ ^100_000) {
     move $fn, "done/$newfn";
     say "Closed $taskstr";
     coalesce-tasks();
+
+    remove-lock();
 }
 
 # XXX Need a non-colorized option
@@ -515,6 +565,8 @@ sub display-with-pager($description, $contents) {
 }
 
 sub generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wchars?) {
+    add-lock();
+
     my (@d) = get-task-filenames();
     my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
@@ -537,14 +589,20 @@ sub generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wch
         }
     }
 
+    remove-lock();
+
     return $out;
 }
 
 sub task-list(Int $num? where { !$num.defined or $num > 0 }) {
+    add-lock();
+
     update-task-log();    # So we know we've done this.
     my $out = generate-task-list( $num, Nil );
 
     display-with-pager( "Tasklist", $out );
+
+    remove-lock();
 }
 
 sub task-monitor() {
@@ -552,6 +610,7 @@ sub task-monitor() {
 
     react {
         whenever key-pressed(:!echo) {
+            say color("reset");
             say "";
             say "Exiting.";
             done;
@@ -563,6 +622,8 @@ sub task-monitor() {
 }
 
 sub task-monitor-show() {
+    add-lock();
+
     state $last = 'x';  # Not '' because then we won't try to draw the initial
                         # screen - there will be no "type any character" prompt!
 
@@ -583,14 +644,23 @@ sub task-monitor-show() {
         print color("reset");
         print "     ...Type any character to exit...  ";
     }
+
+    remove-lock();
 }
 
 sub task-coalesce() {
+    add-lock();
+
     coalesce-tasks();
+
+    remove-lock();
+
     say "Coalesced tasks";
 }
 
 sub coalesce-tasks() {
+    add-lock();
+
     my @nums = get-task-filenames().map: { S/'-' .* .* '.task' $// given .basename };
 
     my $i = 1;
@@ -608,9 +678,13 @@ sub coalesce-tasks() {
             $i++;
         }
     }
+
+    remove-lock();
 }
 
 sub update-task-log() {
+    add-lock();
+
     my $sha = get-taskhash();
 
     my @terms;
@@ -628,6 +702,7 @@ sub update-task-log() {
     if $oldhash eq $sha {
         # No need to update...
         if @terms.grep( { $_ eq $tty } ) {
+            remove-lock();
             return;
         }
     } else {
@@ -641,13 +716,16 @@ sub update-task-log() {
     }
     $fh.say: $tty;
     $fh.close;
+
+    remove-lock();
 }
 
 # Returns true if the task log is okay for this process.
 sub check-task-log() {
     # Not a TTY?  Don't worry about this.
-    # if ( !isatty(0) ) { return 1; }
     if !isatty() { return 1; }
+
+    add-lock();
 
     my $sha = get-taskhash();
 
@@ -662,20 +740,26 @@ sub check-task-log() {
     }
 
     # If hashes differ, it's not cool.
-    if ( $oldhash ne $sha ) { return; }
+    if ( $oldhash ne $sha ) { remove-lock(); return; }
 
     # If terminal in list, it's cool.
     my $tty = get-ttyname();
     if @terms.grep( { $^a eq $tty } ) {
+        remove-lock();
         return 1;
     }
+
+    remove-lock();
 
     # Not in list.
     return;
 }
 
 sub get-taskhash() {
+    add-lock();
     my $tl = generate-task-list( Int, Int );
+    remove-lock();
+
     return sha1-hex($tl);
 }
 
@@ -885,3 +969,20 @@ sub isatty(-->Bool) {
 
 # sub isatty(uint32) returns int32 is native { * };
 sub ttyname(uint32) returns Str is native { * };
+
+sub add-lock() {
+    if $LOCKCNT++ == 0 {
+        $LOCK.lock;
+    }
+}
+
+sub remove-lock() {
+    $LOCKCNT--;
+    if $LOCKCNT < 0 {
+        die("Cannot decrement lock");
+    }
+    if $LOCKCNT == 0 {
+        $LOCK.unlock;
+    }
+}
+
