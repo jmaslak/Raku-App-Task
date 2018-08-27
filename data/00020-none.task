@@ -1,0 +1,5 @@
+Title: [task] Performance, particularly of monitor command
+Created: 1535339295
+--- 1535339295
+We should cache the file reads that monitor does and/or parallelize the 
+reads.
