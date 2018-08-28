@@ -7,6 +7,9 @@ use File::Temp;
 my $tmpdir = tempdir.IO;    # Get IO::Path object for tmpdir.
 note "# Using directory {$tmpdir.Str}";
 
+my $cwd = $*CWD;
+say $*CWD;
+
 my $task = App::Tasks.new( :data-dir($tmpdir) );
 
 is $task.WHAT, App::Tasks, "Initialized class";
@@ -15,5 +18,10 @@ ok $task.data-dir.d, "Data directory exists";
 
 is $task.get-task-filenames.elems, 0, "Proper number of tasks";
 is $task.get-next-sequence.Int, 1, "Proper next sequence";
+
+
+
+
+is $cwd, $*CWD, "Current working directory unchanged";
 
 done-testing;
