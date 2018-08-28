@@ -799,16 +799,13 @@ class App::Tasks {
         }
 
         say "";
-        self.prompt: $prompt;
-
-        while defined my $line = $*IN.get {
+        while defined my $line = self.prompt($prompt) {
             if %elems{$line}:exists {
                 return %elems{$line}<value>;
             }
 
-            say "";
             say "Invalid choice, please try again";
-            self.prompt: $prompt;
+            say "";
         }
 
         return;
@@ -816,16 +813,13 @@ class App::Tasks {
 
     method no-menu-prompt($prompt, @choices) {
         say "";
-        self.prompt: $prompt;
-
-        while defined my $line = $*IN.get {
+        while defined my $line = self.prompt($prompt) {
             if @choices.grep( { $^a eq $line } ) {
                 return $line;
             }
 
-            say "";
             say "Invalid choice, please try again";
-            self.prompt: $prompt;
+            say "";
         }
 
         return;
@@ -833,19 +827,14 @@ class App::Tasks {
 
     method uint-prompt($prompt --> Int) {
         say "";
-        self.prompt: $prompt;
 
-        while defined my $line = $*IN.get {
+        while defined my $line = self.prompt($prompt) {
             if $line !~~ m:s/ ^ \d+ $ / {
                 return $line;
             }
 
-            say "";
             say "Invalid number, please try again";
             say "";
-
-            say "";
-            self.prompt: $prompt;
         }
 
         return;
@@ -853,16 +842,13 @@ class App::Tasks {
 
     method str-prompt($prompt --> Str) {
         say "";
-        self.prompt: $prompt;
-
-        while defined my $line = $*IN.get {
+        while defined my $line = self.prompt($prompt) {
             if $line ne '' {
                 return $line;
             }
 
-            say "";
             say "Invalid input, please try again";
-            self.prompt: $prompt;
+            say "";
         }
 
         return;
@@ -870,9 +856,7 @@ class App::Tasks {
 
     method yn-prompt($prompt --> Bool) {
         say "";
-        self.prompt: $prompt;
-
-        while defined my $line = $*IN.get {
+        while defined my $line = self.prompt($prompt) {
             $line = $line.fc();
             if $line eq '' {
                 return True;
@@ -882,18 +866,16 @@ class App::Tasks {
                 return False;
             }
 
-            say "";
             say "Invalid choice, please try again";
-            self.prompt: $prompt;
+            say "";
         }
 
         return;
     }
 
     method prompt($prompt) {
-        print $PCOLOR;
-        print $prompt;
-        print color('reset');
+        my $outprompt = $PCOLOR ~ $prompt ~ color('reset');
+        return prompt $outprompt;
     }
 
     method clear() {
