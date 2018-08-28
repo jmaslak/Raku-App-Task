@@ -24,10 +24,10 @@ class App::Tasks {
     my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
     my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
 
-    my $LOCK;
-    my $LOCKCNT = 0;
-
     has IO::Path $.data-dir = $*PROGRAM.parent.add("data");
+
+    has $!LOCK;
+    has $!LOCKCNT = 0;
 
     # Fix %*ENV<SHELL> so LESS doesn't give error messages
     if %*ENV<SHELL>:exists {
@@ -52,8 +52,6 @@ class App::Tasks {
 
     method start(@args is copy) {
         chdir $*PROGRAM.parent.add("data");
-
-        $LOCK = ".taskview.lock".IO.open(:a);
 
         $*OUT.out-buffer = False;
 
@@ -139,8 +137,6 @@ class App::Tasks {
                 say "WRONG USAGE";
             }
         }
-
-        $LOCK.close;
     }
 
     method get-next-sequence() {
@@ -163,7 +159,7 @@ class App::Tasks {
     }
 
     method task-new() {
-        self.add-lock();
+        self.add-lock;
 
         my $seq = self.get-next-sequence;
 
@@ -178,7 +174,7 @@ class App::Tasks {
 
         if ! self.confirm-save() {
             say "Aborting.";
-            $LOCK.unlock;
+            self.remove-lock;
             exit;
         }
 
@@ -964,19 +960,35 @@ class App::Tasks {
     }
 
     method add-lock() {
-        if $LOCKCNT++ == 0 {
-            $LOCK.lock;
+        if $!LOCKCNT++ == 0 {
+            self.validate-dir();
+
+            $!LOCK = $.data-dir.add(".taskview.lock").open(:a);
+            $!LOCK.lock;
         }
+
+        return;
     }
 
     method remove-lock() {
-        $LOCKCNT--;
-        if $LOCKCNT < 0 {
+        $!LOCKCNT--;
+        if $!LOCKCNT < 0 {
             die("Cannot decrement lock");
         }
-        if $LOCKCNT == 0 {
-            $LOCK.unlock;
+        if $!LOCKCNT == 0 {
+            $!LOCK.unlock;
+            $!LOCK.close;
         }
+
+        return;
+    }
+
+    method validate-dir() {
+        if ! $.data-dir.f {
+            $.data-dir.mkdir;
+        }
+
+        return;
     }
 
     sub ttyname(uint32) returns Str is native { * };
