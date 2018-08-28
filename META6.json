@@ -4,7 +4,16 @@
     "Joelle Maslak"
   ],
   "build-depends" : [ ],
-  "depends" : [ ],
+  "depends" : [
+    "Digest::SHA1::Native",
+    "File::Temp",
+    "NativeCall",
+    "P5getpriority",
+    "P5localtime",
+    "Term::termios",
+    "Term::ReadKey",
+    "Terminal::ANSIColor"
+  ],
   "description" : "blah blah blah",
   "license" : "Artistic-2.0",
   "name" : "App::Tasks",
