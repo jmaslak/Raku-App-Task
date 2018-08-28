@@ -51,8 +51,6 @@ class App::Tasks {
     my $H_LEN = %H_INFO.values.map( { .<display>.chars } ).max;
 
     method start(@args is copy) {
-        chdir $*PROGRAM.parent.add("data");
-
         $*OUT.out-buffer = False;
 
         if ! @args.elems {
@@ -179,7 +177,7 @@ class App::Tasks {
         }
 
         my $tm = time.Str;
-        my $fh = "{$seq}-none.task".IO.open :w;
+        my $fh = self.data-dir.add("{$seq}-none.task").IO.open :w;
         $fh.say: "Title: $subject";
         $fh.say: "Created: $tm";
 
@@ -193,6 +191,7 @@ class App::Tasks {
         self.remove-lock();
 
         say "Created task $seq";
+        return;
     }
 
     method get-task-filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
@@ -226,17 +225,20 @@ class App::Tasks {
         if ( $new < 1 ) { $new = 1; }
 
         my $oldfn = self.get-task-filename($old) or die("Task not found");
-        my $newfn = $oldfn;
-        $newfn ~~ s/^ \d+ '-'/-/;
-        $newfn = sprintf( "%05d%s", $new, $newfn );
 
-        move $oldfn, "$newfn.tmp";
+        my $oldbase = $oldfn.basename;
+        my $newbase = S/^ \d+ '-'/-/ given $oldbase;
+        my $newfn = $oldfn.parent.add: sprintf( "%05d%s", $new, $newbase);
+
+        my $newfntmp = $oldfn.parent.add: $newfn.basename ~ '.tmp';
+
+        move $oldfn, $newfntmp;
 
         my @d = self.get-task-filenames();
 
         if ( $new < $old ) { @d = reverse @d; }
         for @d -> $f {
-            my $num = $f;
+            my $num = $f.basename;
             $num ~~ s/'-' .* $//;
             if $num == $old {
 
@@ -244,23 +246,23 @@ class App::Tasks {
                 next;
             }
 
-            my $suffix = $f;
+            my $suffix = $f.basename;
             $suffix ~~ s/^ \d+ '-'/-/;
 
             if $new < $old {
                 if ( ( $num >= $new ) && ( $num <= $old ) ) {
                     $num = sprintf( "%05d", $num + 1 );
-                    move $f, "$num$suffix";
+                    move $f, $f.parent.add("$num$suffix");
                 }
             } elsif ( $new > $old ) {
                 if ( ( $num <= $new ) && ( $num >= $old ) ) {
                     $num = sprintf( "%05d", $num - 1 );
-                    move $f, "$num$suffix";
+                    move $f, $f.parent.add("$num$suffix");
                 }
             }
         }
 
-        move "$newfn.tmp", $newfn;
+        move $newfntmp, $newfn;
 
         self.remove-lock();
     }
@@ -685,8 +687,9 @@ class App::Tasks {
         my $sha = self.get-taskhash();
 
         my @terms;
-        if ".taskview.status".IO.f {
-            @terms = ".taskview.status".IO.lines;
+        my $status = $.data-dir.add(".taskview.status");
+        if $status.f {
+            @terms = $status.lines;
         }
 
         my $oldhash = '';
@@ -706,7 +709,7 @@ class App::Tasks {
             @terms = ();
         }
 
-        my $fh = '.taskview.status'.IO.open :w;
+        my $fh = $status.open :w;
         $fh.say: $sha;
         for @terms -> $term {
             $fh.say: $term;
@@ -726,9 +729,11 @@ class App::Tasks {
 
         my $sha = self.get-taskhash();
 
+        my $status = $.data-dir.add(".taskview.status");
+
         my @terms;
-        if ".taskview.status".IO.f {
-            @terms = ".taskview.status".IO.lines;
+        if $status.f {
+            @terms = $status.lines;
         }
 
         my $oldhash = '';
@@ -794,7 +799,7 @@ class App::Tasks {
         }
 
         say "";
-        prompt $prompt;
+        self.prompt: $prompt;
 
         while defined my $line = $*IN.get {
             if %elems{$line}:exists {
@@ -803,7 +808,7 @@ class App::Tasks {
 
             say "";
             say "Invalid choice, please try again";
-            prompt $prompt;
+            self.prompt: $prompt;
         }
 
         return;
@@ -811,7 +816,7 @@ class App::Tasks {
 
     method no-menu-prompt($prompt, @choices) {
         say "";
-        prompt $prompt;
+        self.prompt: $prompt;
 
         while defined my $line = $*IN.get {
             if @choices.grep( { $^a eq $line } ) {
@@ -820,7 +825,7 @@ class App::Tasks {
 
             say "";
             say "Invalid choice, please try again";
-            prompt $prompt;
+            self.prompt: $prompt;
         }
 
         return;
@@ -828,7 +833,7 @@ class App::Tasks {
 
     method uint-prompt($prompt --> Int) {
         say "";
-        prompt $prompt;
+        self.prompt: $prompt;
 
         while defined my $line = $*IN.get {
             if $line !~~ m:s/ ^ \d+ $ / {
@@ -840,7 +845,7 @@ class App::Tasks {
             say "";
 
             say "";
-            prompt $prompt;
+            self.prompt: $prompt;
         }
 
         return;
@@ -848,7 +853,7 @@ class App::Tasks {
 
     method str-prompt($prompt --> Str) {
         say "";
-        prompt $prompt;
+        self.prompt: $prompt;
 
         while defined my $line = $*IN.get {
             if $line ne '' {
@@ -857,7 +862,7 @@ class App::Tasks {
 
             say "";
             say "Invalid input, please try again";
-            prompt $prompt;
+            self.prompt: $prompt;
         }
 
         return;
@@ -865,7 +870,7 @@ class App::Tasks {
 
     method yn-prompt($prompt --> Bool) {
         say "";
-        prompt $prompt;
+        self.prompt: $prompt;
 
         while defined my $line = $*IN.get {
             $line = $line.fc();
@@ -879,7 +884,7 @@ class App::Tasks {
 
             say "";
             say "Invalid choice, please try again";
-            prompt $prompt;
+            self.prompt: $prompt;
         }
 
         return;
