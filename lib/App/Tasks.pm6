@@ -536,10 +536,14 @@ class App::Tasks {
 
         my $fn = self.get-task-filename($tasknum);
         my Str $taskstr = sprintf( "%05d", $tasknum );
-        my ($meta) = $fn ~~ m/^ \d+ '-' (.*) '.task' $/;
+        $fn.basename ~~ m/^ \d+ '-' (.*) '.task' $/;
+        my ($meta) = $0;
         my $newfn = time.Str ~ "-$taskstr-$*PID-$meta.task";
 
-        move $fn, "done/$newfn";
+        self.validate-done-dir-exists();
+
+        my $newpath = $.data-dir.add("done").add($newfn);
+        move $fn, $newpath;
         say "Closed $taskstr";
         self.coalesce-tasks();
 
@@ -979,6 +983,16 @@ class App::Tasks {
     method validate-dir() {
         if ! $.data-dir.f {
             $.data-dir.mkdir;
+        }
+
+        return;
+    }
+
+    method validate-done-dir-exists() {
+        self.validate-dir();
+        my $done = $.data-dir.add("done");
+        if ! $done.f {
+            $done.mkdir;
         }
 
         return;
