@@ -160,24 +160,33 @@ class App::Tasks {
         return @out;
     }
 
-    method task-new() {
+    method task-new(Str $sub?) {
         self.add-lock;
 
         my $seq = self.get-next-sequence;
 
-        my $subject = self.str-prompt( "$P1 Enter Task Subject $P2" ) or exit;
+        my $subject;
+        if ! defined($sub) {
+            $subject = self.str-prompt( "$P1 Enter Task Subject $P2" ) or exit;
+        } else {
+            $subject = $sub;
+        }
+
         $subject ~~ s/^\s+//;
         $subject ~~ s/\s+$//;
         $subject ~~ s:g/\t/ /;
         if ( $subject eq '' ) { say "Blank subject, exiting."; exit; }
         say "";
 
-        my $body = self.get-note-from-user();
+        my $body;
+        if ! defined($sub) {
+            $body = self.get-note-from-user();
 
-        if ! self.confirm-save() {
-            say "Aborting.";
-            self.remove-lock;
-            exit;
+            if ! self.confirm-save() {
+                say "Aborting.";
+                self.remove-lock;
+                exit;
+            }
         }
 
         my $tm = time.Str;
