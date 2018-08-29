@@ -157,7 +157,7 @@ class App::Tasks {
         my @out = self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
         self.remove-lock;
 
-        reterun @out;
+        return @out;
     }
 
     method task-new() {
