@@ -24,7 +24,7 @@ class App::Tasks {
     my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
     my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
 
-    has IO::Path $.data-dir = $*PROGRAM.parent.add("data");
+    has IO::Path $.data-dir = %*ENV<TASKDIR>:exists ?? %*ENV<TASKDIR>.IO !! $*PROGRAM.parent.add("data");
 
     has $!LOCK;
     has $!LOCKCNT = 0;
@@ -153,7 +153,9 @@ class App::Tasks {
     }
 
     method get-task-filenames() {
+        self.add-lock;
         return self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
+        self.remove-lock;
     }
 
     method task-new() {
