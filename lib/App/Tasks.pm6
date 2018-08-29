@@ -154,8 +154,10 @@ class App::Tasks {
 
     method get-task-filenames() {
         self.add-lock;
-        return self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
+        my @out = self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
         self.remove-lock;
+
+        reterun @out;
     }
 
     method task-new() {
@@ -955,6 +957,8 @@ class App::Tasks {
             $!LOCK = $.data-dir.add(".taskview.lock").open(:a);
             $!LOCK.lock;
         }
+
+        if $!LOCKCNT > 20 { die("Lock leak detected!"); }
 
         return;
     }
