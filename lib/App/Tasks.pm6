@@ -154,8 +154,10 @@ class App::Tasks {
 
     method get-task-filenames() {
         self.add-lock;
-        return self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
+        my @ret = self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
         self.remove-lock;
+
+        return @ret;
     }
 
     method task-new() {
