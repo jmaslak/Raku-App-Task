@@ -156,30 +156,39 @@ class App::Tasks {
 
     method get-task-filenames() {
         self.add-lock;
-        my @ret = self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
+        my @out = self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
         self.remove-lock;
 
-        return @ret;
+        return @out;
     }
 
-    method task-new() {
+    method task-new(Str $sub?) {
         self.add-lock;
 
         my $seq = self.get-next-sequence;
 
-        my $subject = self.str-prompt( "$P1 Enter Task Subject $P2" ) or exit;
+        my $subject;
+        if ! defined($sub) {
+            $subject = self.str-prompt( "$P1 Enter Task Subject $P2" ) or exit;
+        } else {
+            $subject = $sub;
+        }
+
         $subject ~~ s/^\s+//;
         $subject ~~ s/\s+$//;
         $subject ~~ s:g/\t/ /;
         if ( $subject eq '' ) { say "Blank subject, exiting."; exit; }
         say "";
 
-        my $body = self.get-note-from-user();
+        my $body;
+        if ! defined($sub) {
+            $body = self.get-note-from-user();
 
-        if ! self.confirm-save() {
-            say "Aborting.";
-            self.remove-lock;
-            exit;
+            if ! self.confirm-save() {
+                say "Aborting.";
+                self.remove-lock;
+                exit;
+            }
         }
 
         my $tm = time.Str;
@@ -538,10 +547,14 @@ class App::Tasks {
 
         my $fn = self.get-task-filename($tasknum);
         my Str $taskstr = sprintf( "%05d", $tasknum );
-        my ($meta) = $fn ~~ m/^ \d+ '-' (.*) '.task' $/;
+        $fn.basename ~~ m/^ \d+ '-' (.*) '.task' $/;
+        my ($meta) = $0;
         my $newfn = time.Str ~ "-$taskstr-$*PID-$meta.task";
 
-        move $fn, "done/$newfn";
+        self.validate-done-dir-exists();
+
+        my $newpath = $.data-dir.add("done").add($newfn);
+        move $fn, $newpath;
         say "Closed $taskstr";
         self.coalesce-tasks();
 
@@ -960,6 +973,8 @@ class App::Tasks {
             $!LOCK.lock;
         }
 
+        if $!LOCKCNT > 20 { die("Lock leak detected!"); }
+
         return;
     }
 
@@ -979,6 +994,16 @@ class App::Tasks {
     method validate-dir() {
         if ! $.data-dir.f {
             $.data-dir.mkdir;
+        }
+
+        return;
+    }
+
+    method validate-done-dir-exists() {
+        self.validate-dir();
+        my $done = $.data-dir.add("done");
+        if ! $done.f {
+            $done.mkdir;
         }
 
         return;
