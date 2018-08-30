@@ -29,6 +29,8 @@ class App::Tasks {
     has $!LOCK;
     has $.LOCKCNT = 0;
 
+    has $.INFH = $*IN;  # Input Filehandle
+
     # Fix %*ENV<SHELL> so LESS doesn't give error messages
     if %*ENV<SHELL>:exists {
         if %*ENV<SHELL> eq '-bash' {
@@ -450,7 +452,7 @@ class App::Tasks {
         ~ color("reset");
 
         my $body = '';
-        while defined my $line = $*IN.get {
+        while defined my $line = self.IN-FH.get {
             if ( $line eq '.' ) {
                 last;
             }
@@ -893,8 +895,8 @@ class App::Tasks {
 
     # Gets terminal size
     method get-size() {
-        my $oldenc = $*IN.encoding;
-        $*IN.encoding('latin-1');       # Disable UTF processing
+        my $oldenc = self.INFH.encoding;
+        self.INFH.encoding('latin-1');       # Disable UTF processing
 
         my $oldin  := Term::termios.new(fd => 0).getattr;
         my $termin  := Term::termios.new(fd => 0).getattr;
@@ -917,18 +919,18 @@ class App::Tasks {
         my Int $rowsize;
         my Int $colsize;
         loop (;;) {
-            while $*IN.getc.ord ≠ 27 { }
-            if $*IN.getc ne '[' { next }
+            while self.INFH.getc.ord ≠ 27 { }
+            if self.INFH.getc ne '[' { next }
 
             # Okay, we have a CPR.
             # Get lines
             my $lines = '';
             my $c;
-            while ($c = $*IN.getc) ~~ /^\d$/ { $lines ~= $c }
+            while ($c = self.INFH.getc) ~~ /^\d$/ { $lines ~= $c }
 
             # Get cols
             my $cols = '';
-            while ($c = $*IN.getc) ~~ /^\d$/ { $cols ~= $c }
+            while ($c = self.INFH.getc) ~~ /^\d$/ { $cols ~= $c }
 
             if $lines ≠ '' and $cols ≠ '' {
                 $rowsize = Int($lines);
@@ -941,13 +943,13 @@ class App::Tasks {
         # Reset terminal;
         $oldin.setattr(:DRAIN);
 
-        $*IN.encoding($oldenc);     # Restore encoding
+        self.INFH.encoding($oldenc);     # Restore encoding
 
         return $rowsize, $colsize;
     }
 
     method isatty(-->Bool) {
-        return $*IN.t;
+        return self.INFH.t;
     }
 
     method add-lock() {
