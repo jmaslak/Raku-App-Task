@@ -29,7 +29,7 @@ class App::Tasks {
     has $!LOCK;
     has $.LOCKCNT = 0;
 
-    has $.INFH = $*IN;  # Input Filehandle
+    has $.INFH  is rw = $*IN;   # Input Filehandle
 
     # Fix %*ENV<SHELL> so LESS doesn't give error messages
     if %*ENV<SHELL>:exists {
@@ -122,7 +122,7 @@ class App::Tasks {
             }
             when $_ ~~ 'close' or $_ ~~ 'commit' {
                 if @args[0]:!exists {
-                    @args[0] = prompt(
+                    @args[0] = self.prompt(
                         "$P1 Please enter task number to close $P2",
                         [@validtasks]
                     ) or exit;
@@ -206,7 +206,7 @@ class App::Tasks {
         self.remove-lock();
 
         say "Created task $seq";
-        return;
+        return $seq;
     }
 
     method get-task-filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
@@ -894,7 +894,8 @@ class App::Tasks {
 
     method prompt($prompt) {
         my $outprompt = $PCOLOR ~ $prompt ~ color('reset');
-        return prompt $outprompt;
+        print $outprompt;
+        return $.INFH.get;
     }
 
     method clear() {
