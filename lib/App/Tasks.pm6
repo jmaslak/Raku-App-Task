@@ -27,7 +27,7 @@ class App::Tasks {
     has IO::Path $.data-dir = %*ENV<TASKDIR>:exists ?? %*ENV<TASKDIR>.IO !! $*PROGRAM.parent.add("data");
 
     has $!LOCK;
-    has $!LOCKCNT = 0;
+    has $.LOCKCNT = 0;
 
     # Fix %*ENV<SHELL> so LESS doesn't give error messages
     if %*ENV<SHELL>:exists {
