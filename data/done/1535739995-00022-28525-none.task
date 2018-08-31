@@ -1,0 +1,4 @@
+Title: [task] Allow tasks to be retitled
+Created: 1535736147
+--- 1535739995
+Added new task-retitle method to lib/App/Tasks.pm6

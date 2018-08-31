@@ -66,6 +66,7 @@ class App::Tasks {
                 [ 'Move (Reprioritize) a Task', 'move' ],
                 [ 'Close a Task',               'close' ],
                 [ 'Coalesce Tasks',             'coalesce' ],
+                [ 'Retitle Tasks',              'retitle' ],
                 [ 'Quit to Shell',              'quit' ],
             );
 
@@ -133,6 +134,7 @@ class App::Tasks {
             when 'list' { self.task-list(|@args) }
             when 'monitor' { self.task-monitor(|@args) }
             when 'coalesce' { self.task-coalesce(|@args) }
+            when 'retitle' { self.task-retitle(|@args) }
             default {
                 say "WRONG USAGE";
             }
@@ -395,6 +397,60 @@ class App::Tasks {
         return $out;
     }
 
+    method task-retitle(Int $tasknum? where { !$tasknum.defined or $tasknum > 0 }, Str $newtitle? is copy) {
+        self.add-lock();
+
+        if ! self.check-task-log() {
+            self.remove-lock();
+            say "Can't retitle - task numbers may have changed since last 'task list'";
+            return;
+        }
+
+        if !$tasknum.defined {
+            my @d = self.get-task-filenames();
+            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
+
+            $tasknum = self.no-menu-prompt(
+                "$P1 Please enter task number to modify $P2",
+                @validtasks
+            ) or exit;
+        }
+
+        if !$newtitle.defined or $newtitle eq '' {
+            $newtitle = self.str-prompt("$P1 Please enter the new title $P2");
+        }
+
+        self.retitle($tasknum, $newtitle);
+
+        self.remove-lock;
+    }
+
+    method retitle(Int $tasknum where * ~~ ^100_000, Str:D $newtitle) {
+        self.add-lock;
+
+        my $fn = self.get-task-filename($tasknum) or die("Task not found");
+        my $oldtask = self.read-task($tasknum);
+
+        my @lines = $fn.lines();
+        for @lines -> $line is rw {
+            if $line ~~ m/^Title: / {
+                $line = "Title: $newtitle";
+                last;
+            }
+        }
+        $fn.spurt(@lines.join("\n") ~ "\n");
+
+        self.add-note(
+            $tasknum,
+            "Title changed from:\n" ~
+                "  " ~ $oldtask<header><title> ~ "\n" ~
+                "To:\n" ~
+                "  " ~ $newtitle
+        );
+
+        self.remove-lock;
+    }
+
     method task-add-note(Int $tasknum where * ~~ ^100_000) {
         self.add-lock();
 
@@ -409,19 +465,25 @@ class App::Tasks {
         self.remove-lock();
     }
 
-    method add-note(Int $tasknum where * ~~ ^100_000) {
+    method add-note(Int $tasknum where * ~~ ^100_000, Str $orignote?) {
         self.add-lock();
 
-        self.task-show($tasknum);
+        if ! $orignote.defined {
+            self.task-show($tasknum);
+        }
 
-        my $note = self.get-note-from-user();
+        my $note = $orignote;
+        if !$note.defined {
+            $note = self.get-note-from-user();
+        }
+
         if ( !defined($note) ) {
             self.remove-lock();
             say "Not adding note";
             return;
         }
 
-        if ! self.confirm-save() {
+        if ! $orignote.defined and ! self.confirm-save() {
             self.remove-lock();
             say "Aborting.";
             exit;
@@ -582,22 +644,17 @@ class App::Tasks {
         }
     }
 
-    method generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wchars?) {
-        self.add-lock();
+    method read-tasks(Int $num? is copy where { !$num.defined or $num > 0}) {
+        self.add-lock;
 
         my (@d) = self.get-task-filenames();
         my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
-        my $out = '';
+        my @out;
         for @tasknums.sort( { $^a <=> $^b } ) -> $tasknum {
             my $task = self.read-task($tasknum);
 
-            my $title = $task<header><title>;
-            my $desc  = $title;
-            if ( defined($wchars) ) {
-                $desc = substr( $title, 0, $wchars - $tasknum.chars - 1 );
-            }
-            $out ~= "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc" ~ color('reset') ~ "\n";
+            push @out, $task;
 
             if defined($num) {
 
@@ -605,6 +662,27 @@ class App::Tasks {
                 $num--;
                 if ( !$num ) { last; }
             }
+        }
+
+        self.remove-lock;
+        return @out;
+    }
+
+    method generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wchars?) {
+        self.add-lock();
+
+        my @tasks = self.read-tasks($num);
+        my $tasknum = 0;
+
+        my $out = '';
+        for @tasks -> $task {
+            $tasknum++;
+            my $title = $task<header><title>;
+            my $desc  = $title;
+            if ( defined($wchars) ) {
+                $desc = substr( $title, 0, $wchars - $tasknum.chars - 1 );
+            }
+            $out ~= "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc" ~ color('reset') ~ "\n";
         }
 
         self.remove-lock();
