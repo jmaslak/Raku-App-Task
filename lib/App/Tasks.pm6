@@ -650,17 +650,18 @@ class App::Tasks {
         my (@d) = self.get-task-filenames();
         my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
-        my @out;
-        for @tasknums.sort( { $^a <=> $^b } ) -> $tasknum {
-            my $task = self.read-task($tasknum);
+        my @out = gather {
+            for @tasknums.sort( { $^a <=> $^b } ) -> $tasknum {
+                my $task = self.read-task($tasknum);
 
-            push @out, $task;
+                take $task;
 
-            if defined($num) {
+                if defined($num) {
 
-                # Exit the loop if we've displayed <num> entries
-                $num--;
-                if ( !$num ) { last; }
+                    # Exit the loop if we've displayed <num> entries
+                    $num--;
+                    if ( !$num ) { last; }
+                }
             }
         }
 
