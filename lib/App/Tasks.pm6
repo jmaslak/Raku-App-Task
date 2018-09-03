@@ -230,6 +230,7 @@ class App::Tasks {
         return;
     }
 
+    # Tested
     method task-move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
         self.add-lock();
 
