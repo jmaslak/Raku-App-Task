@@ -460,7 +460,8 @@ class App::Tasks {
         self.remove-lock;
     }
 
-    method task-add-note(Int $tasknum where * ~~ ^100_000) {
+    # Tested
+    method task-add-note(Int $tasknum where * ~~ ^100_000, Str $note?) {
         self.add-lock();
 
         if ! self.check-task-log() {
@@ -469,7 +470,7 @@ class App::Tasks {
             return;
         }
 
-        self.add-note($tasknum);
+        self.add-note($tasknum, $note);
 
         self.remove-lock();
     }
