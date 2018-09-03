@@ -141,6 +141,7 @@ class App::Tasks {
         }
     }
 
+    # Has test
     method get-next-sequence() {
         self.add-lock();
         my @d = self.get-task-filenames();
@@ -156,6 +157,7 @@ class App::Tasks {
         return sprintf "%05d", $seq;
     }
 
+    # Indirectly tested
     method get-task-filenames() {
         self.add-lock;
         my @out = self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
@@ -164,6 +166,7 @@ class App::Tasks {
         return @out;
     }
 
+    # Has test
     method task-new(Str $sub?) {
         self.add-lock;
 
@@ -211,6 +214,7 @@ class App::Tasks {
         return $seq;
     }
 
+    # Indirectly tested
     method get-task-filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
         self.add-lock();
 
@@ -308,6 +312,7 @@ class App::Tasks {
         self.display-with-pager( "Task $tasknum", $out );
     }
 
+    # Indirectly tested
     method read-task(Int $tasknum where * ~~ ^100_000) {
         self.add-lock();
 
@@ -339,6 +344,7 @@ class App::Tasks {
         return $task;
     }
 
+    # Indirectly tested
     method read-task-body(Hash $task is rw, @lines) {
         self.add-lock();
 
@@ -397,6 +403,7 @@ class App::Tasks {
         return $out;
     }
 
+    # Tested
     method task-retitle(Int $tasknum? where { !$tasknum.defined or $tasknum > 0 }, Str $newtitle? is copy) {
         self.add-lock();
 
@@ -425,6 +432,7 @@ class App::Tasks {
         self.remove-lock;
     }
 
+    # Indirectly tested
     method retitle(Int $tasknum where * ~~ ^100_000, Str:D $newtitle) {
         self.add-lock;
 
@@ -465,6 +473,7 @@ class App::Tasks {
         self.remove-lock();
     }
 
+    # Indirectly tested
     method add-note(Int $tasknum where * ~~ ^100_000, Str $orignote?) {
         self.add-lock();
 
@@ -644,6 +653,7 @@ class App::Tasks {
         }
     }
 
+    # Tested
     method read-tasks(Int $num? is copy where { !$num.defined or $num > 0}) {
         self.add-lock;
 
@@ -1045,6 +1055,7 @@ class App::Tasks {
         return self.INFH.t;
     }
 
+    # Indirectly tested
     method add-lock() {
         if $!LOCKCNT++ == 0 {
             self.validate-dir();
@@ -1058,6 +1069,7 @@ class App::Tasks {
         return;
     }
 
+    # Indirectly tested
     method remove-lock() {
         $!LOCKCNT--;
         if $!LOCKCNT < 0 {
@@ -1071,6 +1083,7 @@ class App::Tasks {
         return;
     }
 
+    # Indirectly tested
     method validate-dir() {
         if ! $.data-dir.f {
             $.data-dir.mkdir;
@@ -1079,6 +1092,7 @@ class App::Tasks {
         return;
     }
 
+    # Indirectly tested
     method validate-done-dir-exists() {
         self.validate-dir();
         my $done = $.data-dir.add("done");
