@@ -98,12 +98,12 @@ class App::Tasks {
         given $cmd {
             when $_ eq 'new' or $_ eq 'add' {
                 if $expire-today {
-                    self.task-new(|@args);
-                } else {
                     my $old = $!check-freshness;
                     $!check-freshness = False;
                     self.task-new-expire-today(|@args);
                     $!check-freshness = $old;
+                } else {
+                    self.task-new(|@args);
                 }
             }
             when 'move' {
