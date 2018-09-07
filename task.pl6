@@ -10,8 +10,8 @@ use lib $*PROGRAM.parent.add("lib");
 
 use App::Tasks;
 
-sub MAIN(+@args) {
+sub MAIN(+@args, :$expire-today?) {
     my $task = App::Tasks.new();
-    $task.start(@args);
+    $task.start(@args, :expire-today($expire-today // False));
 }
 

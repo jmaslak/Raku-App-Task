@@ -31,6 +31,9 @@ class App::Tasks {
 
     has $.INFH  is rw = $*IN;   # Input Filehandle
 
+    # Disable freshness check
+    has $!check-freshness = True;
+
     # Fix %*ENV<SHELL> so LESS doesn't give error messages
     if %*ENV<SHELL>:exists {
         if %*ENV<SHELL> eq '-bash' {
@@ -41,18 +44,23 @@ class App::Tasks {
     my %H_INFO = (
         title => {
             order   => 1,
-            display => 'Title'
+            display => 'Title',
         },
         created => {
             order   => 2,
             display => 'Created',
-            type    => 'date'
-        }
+            type    => 'date',
+        },
+        expires => {
+            order   => 3,
+            display => 'Expires',
+            type    => 'dateexpire',
+        },
     );
 
     my $H_LEN = %H_INFO.values.map( { .<display>.chars } ).max;
 
-    method start(@args is copy) {
+    method start(@args is copy, Bool :$expire-today? = False) {
         $*OUT.out-buffer = False;
 
         if ! @args.elems {
@@ -67,6 +75,7 @@ class App::Tasks {
                 [ 'Close a Task',               'close' ],
                 [ 'Coalesce Tasks',             'coalesce' ],
                 [ 'Retitle Tasks',              'retitle' ],
+                [ 'Set Task Expiration',        'set-expire' ],
                 [ 'Quit to Shell',              'quit' ],
             );
 
@@ -87,8 +96,16 @@ class App::Tasks {
 
         my $cmd = @args.shift.fc;
         given $cmd {
-            when 'new' { self.task-new(|@args) }
-            when 'add' { self.task-new(|@args) }
+            when $_ eq 'new' or $_ eq 'add' {
+                if $expire-today {
+                    self.task-new(|@args);
+                } else {
+                    my $old = $!check-freshness;
+                    $!check-freshness = False;
+                    self.task-new-expire-today(|@args);
+                    $!check-freshness = $old;
+                }
+            }
             when 'move' {
                 if @args[0]:!exists {
                     @args[0] = self.no-menu-prompt(
@@ -135,6 +152,7 @@ class App::Tasks {
             when 'monitor' { self.task-monitor(|@args) }
             when 'coalesce' { self.task-coalesce(|@args) }
             when 'retitle' { self.task-retitle(|@args) }
+            when 'set-expire' { self.task-set-expiration(|@args) }
             default {
                 say "WRONG USAGE";
             }
@@ -164,6 +182,17 @@ class App::Tasks {
         self.remove-lock;
 
         return @out;
+    }
+
+    # Has task
+    method task-new-expire-today(Str $sub?) {
+        self.add-lock;
+
+        my $task = self.task-new($sub);
+        self.task-set-expiration($task.Int, Date.today.Str);
+
+        self.remove-lock;
+        return $task;
     }
 
     # Has test
@@ -369,8 +398,17 @@ class App::Tasks {
     }
 
     method sprint-header-line($header, $value is copy) {
+        my $alert = False;
         if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'date' {
             $value = localtime($value, :scalar);
+        }
+        if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'dateexpire' {
+            if $value < time {
+                $alert = True;
+                $value = localtime($value, :scalar) ~ " (expired)";
+            } else {
+                $value = localtime($value, :scalar);
+            }
         }
 
         my $out = '';
@@ -379,7 +417,11 @@ class App::Tasks {
 
         $out ~= color("bold green");
         $out ~= sprintf( "%-{$len}s : ", %H_INFO{$header}<display> );
-        $out ~= color("bold yellow");
+        if $alert {
+            $out ~= color("bold red");
+        } else {
+            $out ~= color("bold yellow");
+        }
         $out ~= $value;
         $out ~= color("reset");
         $out ~= "\n";
@@ -456,6 +498,99 @@ class App::Tasks {
                 "To:\n" ~
                 "  " ~ $newtitle
         );
+
+        self.remove-lock;
+    }
+
+    # Tested
+    method task-set-expiration(Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 }, Str $day? is copy) {
+        self.add-lock();
+
+        if $day.defined {
+            if $day !~~ m/^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/ {
+                say "Invalid date format - please use YYYY-MM-DD format";
+                self.remove-lock;
+                return;
+            }
+        }
+
+        if ! self.check-task-log() {
+            self.remove-lock();
+            say "Can't set expiration - task numbers may have changed since last 'task list'";
+            return;
+        }
+
+        if !$tasknum.defined {
+            my @d = self.get-task-filenames();
+            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
+
+            my $tn = self.no-menu-prompt(
+                "$P1 Please enter task number to modify $P2",
+                @validtasks
+            ) or exit;
+            $tasknum = $tn.Int;
+        }
+
+        while !$day.defined or $day eq '' {
+            $day = self.str-prompt("$P1 Please enter the last valid day for this task $P2");
+            if $day !~~ m/^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/ {
+                say "Date format is incorrect\n";
+                $day = '';
+            }
+        }
+
+        my $now    = Date.today;
+        my $expire = Date.new($day).succ;
+
+        if $expire ≤ $now {
+            say "Date cannot be before today";
+            self.remove-lock;
+            return;
+        }
+
+        self.set-expiration($tasknum, $expire);
+
+        self.remove-lock;
+    }
+
+    # Indirectly tested
+    method set-expiration(Int $tasknum where * ~~ ^100_000, Date:D $day) {
+        self.add-lock;
+
+        my $fn = self.get-task-filename($tasknum) or die("Task not found");
+        my $oldtask = self.read-task($tasknum);
+
+        my $posix = $day.DateTime.posix;
+
+        my $added = False;
+
+        my @lines = $fn.lines();
+        # XXX We should build a better way of modifying the headers.
+        for @lines -> $line is rw {
+            if $oldtask<header><expires>:exists {
+                if $line ~~ m/^Expires: / {
+                    $line    = "Expires: $posix";
+                    $added   = True;
+                    last;
+                }
+            } else {
+                if $line ~~ m/^Created: / {
+                    $line = "$line\nExpires: $posix";
+                }
+            }
+        }
+        $fn.spurt(@lines.join("\n") ~ "\n");
+
+        if $oldtask<header><expires>:exists {
+            self.add-note(
+                $tasknum,
+                "Updated expiration date from " ~
+                    Date.new(DateTime.new(Int($oldtask<header><expires>))).pred ~
+                    " to " ~ $day.pred
+            );
+        } else {
+            self.add-note( $tasknum, "Added expiration date: " ~ $day.pred );
+        }
 
         self.remove-lock;
     }
@@ -835,6 +970,9 @@ class App::Tasks {
         # Not a TTY?  Don't worry about this.
         if ! self.isatty() { return 1; }
 
+        # Skip freshness check?
+        if ! $!check-freshness { return 1; }
+
         self.add-lock();
 
         my $sha = self.get-taskhash();
@@ -902,7 +1040,7 @@ class App::Tasks {
 
         my $width = Int(log10($cnt) + 1);
 
-        for %elems.keys.sort -> $key {
+        for %elems.keys.sort({$^a <=> $^b}) -> $key {
             my $elem = %elems{$key};
 
             printf "{$PBOLDCOLOR}%{$width}d.{$PINFOCOLOR} %s\n", $key, $elem<description>;
