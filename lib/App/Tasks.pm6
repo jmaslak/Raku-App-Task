@@ -241,6 +241,8 @@ class App::Tasks {
 
         $fh.close;
 
+        @!TASKS = Array.new;    # Clear cache
+
         self.remove-lock();
 
         say "Created task $seq";
@@ -505,6 +507,8 @@ class App::Tasks {
                 "  " ~ $newtitle
         );
 
+        @!TASKS = Array.new;    # Clear cache
+
         self.remove-lock;
     }
 
@@ -596,6 +600,8 @@ class App::Tasks {
             self.add-note( $tasknum, "Added expiration date: " ~ $day );
         }
 
+        @!TASKS = Array.new;    # Clear cache
+
         self.remove-lock;
     }
 
@@ -644,6 +650,8 @@ class App::Tasks {
         $fh.say: "--- " ~ time;
         $fh.say: $note;
         $fh.close;
+
+        @!TASKS = Array.new;    # Clear cache
 
         self.remove-lock();
 
