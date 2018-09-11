@@ -80,6 +80,7 @@ class App::Tasks {
                 [ 'Coalesce Tasks',             'coalesce' ],
                 [ 'Retitle Tasks',              'retitle' ],
                 [ 'Set Task Expiration',        'set-expire' ],
+                [ 'Expire Tasks',               'expire' ],
                 [ 'Quit to Shell',              'quit' ],
             );
 
@@ -157,6 +158,7 @@ class App::Tasks {
             when 'coalesce' { self.task-coalesce(|@args) }
             when 'retitle' { self.task-retitle(|@args) }
             when 'set-expire' { self.task-set-expiration(|@args) }
+            when 'expire' { self.expire(|@args) }
             default {
                 say "WRONG USAGE";
             }
@@ -356,6 +358,7 @@ class App::Tasks {
         $task<header> = Hash.new;
         $task<body>   = [];
         $task<number> = $tasknum;
+        $task<expire> = Date;   # Empty object
 
         my @lines = self.get-task-filename($tasknum).lines;
         while (@lines) {
@@ -509,6 +512,25 @@ class App::Tasks {
 
         @!TASKS = Array.new;    # Clear cache
 
+        self.remove-lock;
+    }
+
+    # Tested
+    method expire() {
+        self.add-lock();
+
+        my @tasks = self.read-tasks();
+        for @tasks -> $task {
+            if $task<header><expires>:exists {
+                if Date.new($task<header><expires>) < Date.today {
+                    self.add-note($task<number>, "Task expired, closed.");
+                    self.task-close($task<number>, :coalesce(False));
+                }
+            }
+        }
+        self.coalesce-tasks();
+
+        @!TASKS = Array.new;
         self.remove-lock;
     }
 
@@ -754,7 +776,7 @@ class App::Tasks {
         }
     }
 
-    method task-close(Int $tasknum where * ~~ ^100_000) {
+    method task-close(Int:D $tasknum where * ~~ ^100_000, Bool :$coalesce? = True) {
         self.add-lock();
 
         if ! self.check-task-log() {
@@ -776,7 +798,11 @@ class App::Tasks {
         my $newpath = $.data-dir.add("done").add($newfn);
         move $fn, $newpath;
         say "Closed $taskstr";
-        self.coalesce-tasks();
+
+        @!TASKS = Array.new;
+        if $coalesce {
+            self.coalesce-tasks();
+        }
 
         self.remove-lock();
     }
@@ -927,6 +953,7 @@ class App::Tasks {
                 my $new = $orig.parent.add($newname);
 
                 move $orig, $new;
+                @!TASKS = Array.new();  # Clear cache
                 $i++;
             } elsif $i == $num {
                 $i++;

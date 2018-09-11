@@ -82,7 +82,21 @@ sub tests {
 
     $expected = "Added expiration date: $day\n";
     is @tasks[1]<body>[0]<body>, $expected, "Note is correct";
+
+    $task.set-expiration(1, Date.new($day.pred));
+
+    @tasks = $task.read-tasks;
+    is @tasks.elems, 2, "B: Proper number of tasks exist";
+    is @tasks[0]<header><title>, "Subject Line", "B: Proper subject line";
+    is @tasks[0]<header><expires>, $day.pred.Str, "B: Expires header correct";
+    is @tasks[0]<body>.elems, 3, "B: Three notes found";
+
+    $task.expire();
     
+    @tasks = $task.read-tasks;
+    is @tasks.elems, 1, "C: Proper number of tasks exist";
+    is @tasks[0]<header><title>, "2 Subject Line", "C: Proper subject line";
+
     done-testing;
 }
 
