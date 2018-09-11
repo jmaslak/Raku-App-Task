@@ -28,6 +28,8 @@ class App::Tasks {
 
     has $!LOCK;
     has $.LOCKCNT = 0;
+    has $.SEMAPHORE = Lock.new;
+    has @!TASKS;
 
     has $.INFH  is rw = $*IN;   # Input Filehandle
 
@@ -795,27 +797,25 @@ class App::Tasks {
     # Tested
     method read-tasks(Int $num? is copy where { !$num.defined or $num > 0}) {
         self.add-lock;
+        if @!TASKS.elems {
+            self.remove-lock;
+            return @!TASKS;
+        };
 
-        my (@d) = self.get-task-filenames();
+        my (@d)        = self.get-task-filenames();
         my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
+        @tasknums = @tasknums.sort( { $^a <=> $^b } ).list;
 
-        my @out = gather {
-            for @tasknums.sort( { $^a <=> $^b } ) -> $tasknum {
-                my $task = self.read-task($tasknum);
+        my $taskcnt = min(@tasknums.elems, $num ?? $num !! @tasknums.elems);
 
-                take $task;
-
-                if defined($num) {
-
-                    # Exit the loop if we've displayed <num> entries
-                    $num--;
-                    if ( !$num ) { last; }
-                }
-            }
+        my %out;
+        race for @tasknums.race(batch => 1, degree => 16) -> $tasknum {
+            %out{$tasknum} = self.read-task($tasknum);
         }
 
+        @!TASKS = %out.keys.sort( { $^a <=> $^b } ).map: { %out{$^a} };
         self.remove-lock;
-        return @out;
+        return @!TASKS;
     }
 
     method generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wchars?) {
@@ -824,20 +824,20 @@ class App::Tasks {
         my @tasks = self.read-tasks($num);
         my $tasknum = 0;
 
-        my $out = '';
-        for @tasks -> $task {
+        my @out = @tasks.hyper.map: -> $task {
             $tasknum++;
             my $title = $task<header><title>;
             my $desc  = $title;
             if ( defined($wchars) ) {
                 $desc = substr( $title, 0, $wchars - $tasknum.chars - 1 );
             }
-            $out ~= "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc" ~ color('reset') ~ "\n";
-        }
+
+            "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc" ~ color('reset') ~ "\n"
+        };
 
         self.remove-lock();
 
-        return $out;
+        return @out.join();
     }
 
     method task-list(Int $num? where { !$num.defined or $num > 0 }) {
@@ -1199,28 +1199,33 @@ class App::Tasks {
 
     # Indirectly tested
     method add-lock() {
-        if $!LOCKCNT++ == 0 {
-            self.validate-dir();
+        $.SEMAPHORE.protect( {
+            if $!LOCKCNT++ == 0 {
+                @!TASKS = Array.new;
+                self.validate-dir();
 
-            $!LOCK = $.data-dir.add(".taskview.lock").open(:a);
-            $!LOCK.lock;
-        }
+                $!LOCK = $.data-dir.add(".taskview.lock").open(:a);
+                $!LOCK.lock;
+            }
 
-        if $!LOCKCNT > 20 { die("Lock leak detected!"); }
+            if $!LOCKCNT > 80 { die("Lock leak detected!"); }
+        } );
 
         return;
     }
 
     # Indirectly tested
     method remove-lock() {
-        $!LOCKCNT--;
-        if $!LOCKCNT < 0 {
-            die("Cannot decrement lock");
-        }
-        if $!LOCKCNT == 0 {
-            $!LOCK.unlock;
-            $!LOCK.close;
-        }
+        $.SEMAPHORE.protect( {
+            $!LOCKCNT--;
+            if $!LOCKCNT < 0 {
+                die("Cannot decrement lock");
+            }
+            if $!LOCKCNT == 0 {
+                $!LOCK.unlock;
+                $!LOCK.close;
+            }
+        } );
 
         return;
     }
