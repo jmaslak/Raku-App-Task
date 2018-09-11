@@ -43,18 +43,20 @@ class App::Tasks {
 
     my %H_INFO = (
         title => {
-            order   => 1,
-            display => 'Title',
+            order        => 1,
+            display      => 'Title',
+            type         => 'string',
         },
         created => {
-            order   => 2,
-            display => 'Created',
-            type    => 'date',
+            order        => 2,
+            display      => 'Created',
+            type         => 'datetime',
         },
         expires => {
-            order   => 3,
-            display => 'Expires',
-            type    => 'dateexpire',
+            order        => 3,
+            display      => 'Expires',
+            type         => 'day',
+            alert-expire => True,
         },
     );
 
@@ -399,16 +401,18 @@ class App::Tasks {
 
     method sprint-header-line($header, $value is copy) {
         my $alert = False;
-        if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'date' {
+        if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'datetime' {
             $value = localtime($value, :scalar);
         }
-        if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'dateexpire' {
-            if $value < time {
-                $alert = True;
-                $value = localtime($value, :scalar) ~ " (expired)";
-            } else {
-                $value = localtime($value, :scalar);
+        if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'day' {
+            my $parsed = self.pretty-day($value);
+            if %H_INFO{$header}<alert-expire>:exists and %H_INFO{$header}<alert-expire> {
+                if Date.new($value) < Date.today {
+                    $alert = True;
+                    $parsed = "$value (expired)";
+                }
             }
+            $value = $parsed;
         }
 
         my $out = '';
@@ -540,9 +544,9 @@ class App::Tasks {
         }
 
         my $now    = Date.today;
-        my $expire = Date.new($day).succ;
+        my $expire = Date.new($day);
 
-        if $expire ≤ $now {
+        if $expire < $now {
             say "Date cannot be before today";
             self.remove-lock;
             return;
@@ -560,8 +564,6 @@ class App::Tasks {
         my $fn = self.get-task-filename($tasknum) or die("Task not found");
         my $oldtask = self.read-task($tasknum);
 
-        my $posix = $day.DateTime.posix;
-
         my $added = False;
 
         my @lines = $fn.lines();
@@ -569,13 +571,13 @@ class App::Tasks {
         for @lines -> $line is rw {
             if $oldtask<header><expires>:exists {
                 if $line ~~ m/^Expires: / {
-                    $line    = "Expires: $posix";
+                    $line    = "Expires: $day";
                     $added   = True;
                     last;
                 }
             } else {
                 if $line ~~ m/^Created: / {
-                    $line = "$line\nExpires: $posix";
+                    $line = "$line\nExpires: $day";
                 }
             }
         }
@@ -585,11 +587,11 @@ class App::Tasks {
             self.add-note(
                 $tasknum,
                 "Updated expiration date from " ~
-                    Date.new(DateTime.new(Int($oldtask<header><expires>))).pred ~
-                    " to " ~ $day.pred
+                    $oldtask<header><expires> ~
+                    " to $day"
             );
         } else {
-            self.add-note( $tasknum, "Added expiration date: " ~ $day.pred );
+            self.add-note( $tasknum, "Added expiration date: " ~ $day );
         }
 
         self.remove-lock;
@@ -1241,6 +1243,21 @@ class App::Tasks {
         }
 
         return;
+    }
+
+    # Indirectly tested
+    method pretty-day(Str:D $raw where /^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/) {
+        my $dt = Date.new($raw);
+
+        state @days = « unknown Mon Tue Wed Thu Fri Sat Sun »;
+        state @months = « unknown Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec »;
+
+        my $weekday = @days[$dt.day-of-week];
+        my $month   = @months[$dt.month];
+        my $day     = $dt.day.fmt("%2d");
+        my $year    = $dt.year;
+
+        return "$weekday $month $day 23:59:59 $year";
     }
 
     sub ttyname(uint32) returns Str is native { * };

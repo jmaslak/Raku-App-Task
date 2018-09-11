@@ -35,13 +35,13 @@ sub tests {
     is @tasks[0]<body>.elems, 0, "No notes found";
 
 
-    my $day = Date.today.succ.succ;
+    my $day = Date.today;
     $task.task-set-expiration(1, $day.Str);
 
     @tasks = $task.read-tasks;
     is @tasks.elems, 1, "Proper number of tasks exist";
     is @tasks[0]<header><title>, "Subject Line", "Proper subject line";
-    is @tasks[0]<header><expires>, $day.succ.DateTime.posix, "Expires header correct";
+    is @tasks[0]<header><expires>, $day.Str, "Expires header correct";
     is @tasks[0]<body>.elems, 1, "One note found";
 
     my $expected = "Added expiration date: $day\n";
@@ -53,7 +53,7 @@ sub tests {
     @tasks = $task.read-tasks;
     is @tasks.elems, 1, "Proper number of tasks exist";
     is @tasks[0]<header><title>, "Subject Line", "Proper subject line";
-    is @tasks[0]<header><expires>, $day.succ.succ.DateTime.posix, "Expires header correct";
+    is @tasks[0]<header><expires>, $day.succ.Str, "Expires header correct";
     is @tasks[0]<body>.elems, 2, "Two notes found";
 
     $expected = "Updated expiration date from $day to " ~ $day.succ ~ "\n";
@@ -72,15 +72,15 @@ sub tests {
 
     $day = Date.today;
 
-    my @tasks = $task.read-tasks;
+    @tasks = $task.read-tasks;
     is @tasks.elems, 2, "Proper number of tasks exist";
     is @tasks[1]<header><title>, "2 Subject Line", "Proper subject line";
     is @tasks[1]<body>.elems, 1, "One note found";
 
-    is @tasks[1]<header><expires>, $day.succ.DateTime.posix, "Expires header correct";
+    is @tasks[1]<header><expires>, $day.Str, "Expires header correct";
     is @tasks[1]<body>.elems, 1, "One note found";
 
-    my $expected = "Added expiration date: $day\n";
+    $expected = "Added expiration date: $day\n";
     is @tasks[1]<body>[0]<body>, $expected, "Note is correct";
     
     done-testing;
