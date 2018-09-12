@@ -524,7 +524,7 @@ class App::Tasks {
             if $task<header><expires>:exists {
                 if Date.new($task<header><expires>) < Date.today {
                     self.add-note($task<number>, "Task expired, closed.");
-                    self.task-close($task<number>, :coalesce(False));
+                    self.task-close($task<number>, :coalesce(False), :interactive(False));
                 }
             }
         }
@@ -776,16 +776,23 @@ class App::Tasks {
         }
     }
 
-    method task-close(Int:D $tasknum where * ~~ ^100_000, Bool :$coalesce? = True) {
+    method task-close(
+        Int:D  $tasknum where * ~~ ^100_000,
+        Bool  :$coalesce? = True,
+        Bool  :$interactive? = True
+        --> Nil
+    ) {
         self.add-lock();
 
-        if ! self.check-task-log() {
+        if $interactive and ! self.check-task-log() {
             self.remove-lock();
             say "Can't close task - task numbers may have changed since last 'task list'";
             return;
         }
 
-        self.add-note($tasknum);
+        if $interactive {
+            self.add-note($tasknum);
+        }
 
         my $fn = self.get-task-filename($tasknum);
         my Str $taskstr = sprintf( "%05d", $tasknum );

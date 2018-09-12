@@ -1,2 +1,4 @@
 Title: [task] [bug] Expire should not require updated "task list"
 Created: 1536681906
+--- 1536784697
+Allow expire to properly function without prompts.
