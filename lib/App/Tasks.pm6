@@ -355,12 +355,13 @@ class App::Tasks {
         self.add-lock();
 
         my $task = {};
-        $task<header> = Hash.new;
-        $task<body>   = [];
-        $task<number> = $tasknum;
-        $task<expire> = Date;   # Empty object
+        $task<header>   = Hash.new;
+        $task<body>     = [];
+        $task<number>   = $tasknum;
+        $task<expire>   = Date;   # Empty object
+        $task<filename> = self.get-task-filename($tasknum);
 
-        my @lines = self.get-task-filename($tasknum).lines;
+        my @lines = $task<filename>.lines;
         while (@lines) {
             my $line = @lines.shift;
 
@@ -863,17 +864,17 @@ class App::Tasks {
         self.add-lock();
 
         my @tasks = self.read-tasks($num);
-        my $tasknum = 0;
+
+        my Int $maxnum = @tasks.map({ $^a<number>}).max;
 
         my @out = @tasks.hyper.map: -> $task {
-            $tasknum++;
             my $title = $task<header><title>;
             my $desc  = $title;
             if ( defined($wchars) ) {
-                $desc = substr( $title, 0, $wchars - $tasknum.chars - 1 );
+                $desc = substr( $title, 0, $wchars - $maxnum.chars - 1 );
             }
 
-            "$PINFOCOLOR$tasknum $PBOLDCOLOR$desc" ~ color('reset') ~ "\n"
+            "$PINFOCOLOR$task<number> $PBOLDCOLOR$desc" ~ color('reset') ~ "\n"
         };
 
         self.remove-lock();
