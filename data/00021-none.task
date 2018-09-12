@@ -1,6 +1,2 @@
-Title: [task] yn dialog accepts invalid characters
-Created: 1535558436
---- 1535558436
-For example:
-
-[task] Save This Task [Y/n]? > yh
+Title: [task] Add handling of stale tasks
+Created: 1536249836

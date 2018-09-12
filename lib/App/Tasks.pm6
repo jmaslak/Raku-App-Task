@@ -31,6 +31,9 @@ class App::Tasks {
     has $.SEMAPHORE = Lock.new;
     has @!TASKS;
 
+    # Partially implemented - there be dragons here!
+    has $.write-output is rw = True; # Write output to terminal, used for testing only.
+
     has $.INFH  is rw = $*IN;   # Input Filehandle
 
     # Disable freshness check
@@ -1147,20 +1150,21 @@ class App::Tasks {
         return;
     }
 
+    # Tested
     method yn-prompt($prompt --> Bool) {
-        say "";
+        say "" if $.write-output;
         while defined my $line = self.prompt($prompt) {
             $line = $line.fc();
             if $line eq '' {
                 return True;
-            } elsif $line ~~ m/ 'y' ( 'es' )? / {
+            } elsif $line ~~ m/ ^ 'y' ( 'es' )? $ / {
                 return True;
-            } elsif $line ~~ m/ 'n' ( 'o' )? / {
+            } elsif $line ~~ m/ ^ 'n' ( 'o' )? $ / {
                 return False;
             }
 
-            say "Invalid choice, please try again";
-            say "";
+            say "Invalid choice, please try again" if $.write-output;
+            say "" if $.write-output;
         }
 
         return;
@@ -1168,7 +1172,7 @@ class App::Tasks {
 
     method prompt($prompt) {
         my $outprompt = $PCOLOR ~ $prompt ~ color('reset');
-        print $outprompt;
+        print $outprompt if $.write-output;
         return $.INFH.get;
     }
 

@@ -1,0 +1,7 @@
+Title: [task] yn dialog accepts invalid characters
+Created: 1535558436
+--- 1535558436
+For example:
+
+[task] Save This Task [Y/n]? > yh--- 1536788718
+Fixed y/n handling (wasn't looking for start/end of line)
