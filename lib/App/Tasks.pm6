@@ -235,19 +235,23 @@ class App::Tasks {
         }
 
         my $tm = time.Str;
-        my $fh = self.data-dir.add("{$seq}-none.task").IO.open :w;
-        $fh.say: "Title: $subject";
-        $fh.say: "Created: $tm";
 
-        if ( defined($body) ) {
-            $fh.say: "--- $tm";
-            $fh.print: $body;
+        my %task;
+
+        %task<header> = Hash.new;
+        %task<header><created> = $tm;
+        %task<header><title> = $subject;
+
+        %task<body> = Array.new;
+
+        if defined($body) {
+            my %note;
+            %note<date> = $tm;
+            %note<body> = $body;
+            %task<body>.push: %note;
         }
 
-        $fh.close;
-
-        @!TASKS = Array.new;    # Clear cache
-
+        self.write-task($seq.Int, %task);
         self.remove-lock();
 
         say "Created task $seq";
@@ -391,14 +395,19 @@ class App::Tasks {
     method write-task(Int $tasknum where * ~~ ^100_000, %task) {
         self.add-lock;
 
-        my $fn = self.get-task-filename($tasknum) or die("Task not found");
+        # Get task filename
+        my $seq = $tasknum.fmt("%05d");
+        my $fn = self.get-task-filename($tasknum)
+            // self.data-dir.add("{$seq}-none.task").IO;
 
         my $fh = $fn.open(:w);
 
         for %task<header>.kv -> $key, $val {
+            if %H_INFO{$key}:!exists { die("Header value $key is invalid"); }
+
             if ! $val.defined { next; }
 
-            $fh.say: "$key: $val";
+            $fh.say: %H_INFO{$key}<display> ~ ": $val";
         }
 
         for %task<body>.list -> $note {
@@ -524,26 +533,19 @@ class App::Tasks {
         self.add-lock;
 
         my $fn = self.get-task-filename($tasknum) or die("Task not found");
-        my $oldtask = self.read-task($tasknum);
+        my $task = self.read-task($tasknum);
 
-        my @lines = $fn.lines();
-        for @lines -> $line is rw {
-            if $line ~~ m/^Title: / {
-                $line = "Title: $newtitle";
-                last;
-            }
-        }
-        $fn.spurt(@lines.join("\n") ~ "\n");
-
-        self.add-note(
-            $tasknum,
-            "Title changed from:\n" ~
-                "  " ~ $oldtask<header><title> ~ "\n" ~
+        my %note;
+        %note<date> = time;
+        %note<body> = "Title changed from:\n" ~
+                "  " ~ $task<header><title> ~ "\n" ~
                 "To:\n" ~
-                "  " ~ $newtitle
-        );
+                "  " ~ $newtitle;
+        $task<body>.push: %note;
 
-        @!TASKS = Array.new;    # Clear cache
+        $task<header><title> = $newtitle;
+
+        self.write-task($tasknum, $task);
 
         self.remove-lock;
     }
