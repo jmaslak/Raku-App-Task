@@ -198,7 +198,7 @@ class App::Tasks {
         self.add-lock;
 
         my $task = self.task-new($sub);
-        self.task-set-expiration($task.Int, Date.today.Str);
+        self.task-set-expiration($task.Int, DateTime.now.local.Date.Str);
 
         self.remove-lock;
         return $task;
@@ -447,7 +447,7 @@ class App::Tasks {
         if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'day' {
             my $parsed = self.pretty-day($value);
             if %H_INFO{$header}<alert-expire>:exists and %H_INFO{$header}<alert-expire> {
-                if Date.new($value) < Date.today {
+                if Date.new($value) < Date.new(DateTime.now.local.Date.Str) {
                     $alert = True;
                     $parsed = "$value (expired)";
                 }
@@ -555,7 +555,7 @@ class App::Tasks {
         my @tasks = self.read-tasks();
         for @tasks -> $task {
             if $task<header><expires>:exists {
-                if Date.new($task<header><expires>) < Date.today {
+                if Date.new($task<header><expires>) < Date.new(DateTime.now.local.Date.Str) {
                     self.add-note($task<number>, "Task expired, closed.");
                     self.task-close($task<number>, :coalesce(False), :interactive(False));
                 }
@@ -604,7 +604,7 @@ class App::Tasks {
             }
         }
 
-        my $now    = Date.today;
+        my $now    = Date.new(DateTime.now.local.Date.Str);
         my $expire = Date.new($day);
 
         if $expire < $now {
@@ -623,39 +623,22 @@ class App::Tasks {
         self.add-lock;
 
         my $fn = self.get-task-filename($tasknum) or die("Task not found");
-        my $oldtask = self.read-task($tasknum);
+        my $task = self.read-task($tasknum);
 
-        my $added = False;
-
-        my @lines = $fn.lines();
-        # XXX We should build a better way of modifying the headers.
-        for @lines -> $line is rw {
-            if $oldtask<header><expires>:exists {
-                if $line ~~ m/^Expires: / {
-                    $line    = "Expires: $day";
-                    $added   = True;
-                    last;
-                }
-            } else {
-                if $line ~~ m/^Created: / {
-                    $line = "$line\nExpires: $day";
-                }
-            }
-        }
-        $fn.spurt(@lines.join("\n") ~ "\n");
-
-        if $oldtask<header><expires>:exists {
-            self.add-note(
-                $tasknum,
-                "Updated expiration date from " ~
-                    $oldtask<header><expires> ~
-                    " to $day"
-            );
+        my %note;
+        %note<date> = time;
+        if $task<header><expires>:exists {
+            %note<body> = "Updated expiration date from " ~
+                    $task<header><expires> ~
+                    " to " ~ $day.Str;
         } else {
-            self.add-note( $tasknum, "Added expiration date: " ~ $day );
+            %note<body> = "Added expiration date: " ~ $day;
         }
+        $task<body>.push: %note;
 
-        @!TASKS = Array.new;    # Clear cache
+        $task<header><expires> = $day.Str;
+
+        self.write-task($tasknum, $task);
 
         self.remove-lock;
     }
