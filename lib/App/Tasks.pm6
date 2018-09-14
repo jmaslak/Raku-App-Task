@@ -388,6 +388,35 @@ class App::Tasks {
     }
 
     # Indirectly tested
+    method write-task(Int $tasknum where * ~~ ^100_000, %task) {
+        self.add-lock;
+
+        my $fn = self.get-task-filename($tasknum) or die("Task not found");
+
+        my $fh = $fn.open(:w);
+
+        for %task<header>.kv -> $key, $val {
+            if ! $val.defined { next; }
+
+            $fh.say: "$key: $val";
+        }
+
+        for %task<body>.list -> $note {
+            $fh.say: "--- $note<date>";
+            $fh.print: $note<body>;
+            if $note<body> !~~ m:s/ \n $/ {
+                $fh.say: "";
+            }
+        }
+
+        $fh.close;
+        
+        @!TASKS = Array.new;    # Clear cache
+
+        self.remove-lock;
+    }
+
+    # Indirectly tested
     method read-task-body(Hash $task is rw, @lines) {
         self.add-lock();
 
@@ -671,13 +700,14 @@ class App::Tasks {
             exit;
         }
 
-        my $fn = self.get-task-filename($tasknum) or die("Task not found");
-        my $fh = $fn.open(:a);
-        $fh.say: "--- " ~ time;
-        $fh.say: $note;
-        $fh.close;
+        my $task = self.read-task($tasknum);
 
-        @!TASKS = Array.new;    # Clear cache
+        my %note;
+        %note<date> = time;
+        %note<body> = $note;
+        $task<body>.push: %note;
+
+        self.write-task($tasknum, $task);
 
         self.remove-lock();
 
