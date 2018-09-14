@@ -100,7 +100,7 @@ class App::Tasks {
             }
         }
 
-        my @validtasks = self.get-task-filenames().map( { Int( S/\- .* $// ); } );
+        my @validtasks = self.get-task-filenames().map( { Int( S/ ^ .* ( <[0..9]>+ ) \- .* $/$0/ ); } );
 
         my $cmd = @args.shift.fc;
         given $cmd {
@@ -142,6 +142,7 @@ class App::Tasks {
                         "$P1 Please enter task number to modify $P2",
                         @validtasks
                     ) or exit;
+                    @args[0] = @args[0].Int;
                     say "";
                 }
                 self.task-add-note(|@args);
