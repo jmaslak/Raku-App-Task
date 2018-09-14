@@ -1,8 +1,2 @@
-Title: [task] feature: Don't colorize non-terminals
-Created: 1437511791
---- 1437511791
-When piping the output (Ex: task list | grep 'foo'), don't colorize the output
-inappropriately.
---- 1437511840
-This might actually not be important.  Looks like modern Linux grep can deal
-with colorized output.
+Title: [task] feature: Need ability to select task from list
+Created: 1437517055

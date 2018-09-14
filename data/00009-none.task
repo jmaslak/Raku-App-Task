@@ -1,2 +1,5 @@
-Title: [task] feature: Need ability to select task from list
-Created: 1437517055
+Title: [task] feature: Add lots more input validation
+Created: 1437537099
+--- 1437537099
+In particular, make sure to validate that the numeric task arguments 
+actually make sense (numbers, no decimal, positive, etc).

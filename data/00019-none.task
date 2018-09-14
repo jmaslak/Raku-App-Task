@@ -1,2 +1,5 @@
-Title: [task] Deleting non-existant tasks shouldn't give a bad error
-Created: 1535338953
+Title: [task] Performance, particularly of monitor command
+Created: 1535339295
+--- 1535339295
+We should cache the file reads that monitor does and/or parallelize the 
+reads.

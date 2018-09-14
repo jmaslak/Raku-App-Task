@@ -1,5 +1,4 @@
-Title: [task] feature: Add lots more input validation
-Created: 1437537099
---- 1437537099
-In particular, make sure to validate that the numeric task arguments 
-actually make sense (numbers, no decimal, positive, etc).
+Title: [task] refactor: Make colorization more configurable
+Created: 1437578481
+--- 1437578481
+Color strings shouldn't be hard coded anywhere.

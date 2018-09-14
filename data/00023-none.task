@@ -1,2 +1,4 @@
-Title: [task] "task note" interactive should not ask for new "task list"
-Created: 1536876378
+Title: [task] Defer task feature
+Created: 1536876465
+--- 1536876465
+Allow tasks to be deferred until a future date.
