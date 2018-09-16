@@ -24,7 +24,7 @@ class App::Tasks {
     my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
     my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
 
-    has IO::Path $.data-dir = %*ENV<TASKDIR>:exists ?? %*ENV<TASKDIR>.IO !! $*PROGRAM.parent.add("data");
+    has IO::Path $.data-dir = gettaskdir();
 
     has $!LOCK;
     has $.LOCKCNT = 0;
@@ -1330,5 +1330,10 @@ class App::Tasks {
 
     sub ttyname(uint32) returns Str is native { * };
 
+    sub gettaskdir(-->IO::Path) {
+        if %*ENV<TASKDIR>:exists { return %*ENV<TASKDIR>.IO }
+        if %*ENV<HOME>:exists    { return %*ENV<HOME>.IO.add(".task") }
+        return ".task".IO;
+    }
 }
 
