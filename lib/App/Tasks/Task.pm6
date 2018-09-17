@@ -110,6 +110,14 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
         $fh.close;
     }
 
+    # Add a task note to this object
+    method add-note(Str:D $text) {
+        $text.chomp;
+
+        my $note = App::Tasks::TaskBody.new(:date(DateTime.now), :text($text));
+        @!body.push: $note;
+    }
+
     # Get the filename associated with a task number
     my sub get-task-file(IO::Path:D $data-dir, Int:D $task-number -->IO::Path) {
         my $partial-fn = $task-number.fmt("%05d");

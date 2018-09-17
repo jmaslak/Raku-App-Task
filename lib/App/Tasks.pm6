@@ -646,23 +646,14 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     }
 
     # Tested
-    method task-add-note(Int $tasknum where * ~~ ^100_000, Str $note?) {
-        self.add-lock();
+    method task-add-note(Int $tasknum where * ~~ ^100_000, Str $orignote?) {
+        self.add-lock;
 
         if ! self.check-task-log() {
             self.remove-lock();
             say "Can't add note - task numbers may have changed since last 'task list'";
             return;
         }
-
-        self.add-note($tasknum, $note);
-
-        self.remove-lock();
-    }
-
-    # Indirectly tested
-    method add-note(Int $tasknum where * ~~ ^100_000, Str $orignote?) {
-        self.add-lock();
 
         if ! $orignote.defined {
             self.task-show($tasknum);
@@ -685,18 +676,30 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
             exit;
         }
 
-        my $task = self.read-task($tasknum);
+        self.add-note($tasknum, $note);
 
-        my %note;
-        %note<date> = time;
-        %note<body> = $note;
-        $task<body>.push: %note;
+        self.remove-lock;
+    }
 
-        self.write-task($tasknum, $task);
+    # Indirectly tested
+    multi method add-note(Int:D $tasknum where * ~~ ^100_000, Str:D $note) {
+        self.add-lock;
+
+        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        self.add-note($task, $note);
+
+        self.remove-lock;
+    }
+
+    multi method add-note(App::Tasks::Task:D $task, Str:D $note) {
+        self.add-lock;
+
+        $task.add-note($note);
+        $task.to-file;
 
         self.remove-lock();
 
-        say "Updated task $tasknum";
+        say "Updated task " ~ $task.task-number;
     }
 
     method confirm-save() {
