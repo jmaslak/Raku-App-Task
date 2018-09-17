@@ -4,7 +4,8 @@
 #
 use v6;
 
-class App::Tasks {
+class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
+    use App::Tasks::Task;
     use Digest::SHA1::Native;
     use File::Temp;
     use NativeCall;
