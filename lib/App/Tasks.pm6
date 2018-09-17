@@ -338,18 +338,18 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     method task-show(Int $tasknum where * ~~ ^100_000) {
         self.add-lock();
 
-        my $task = self.read-task($tasknum);
+        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
 
         my $out    = '';
-        my $header = $task<header>;
-        for %H_INFO.keys.sort( { %H_INFO{$^a}<order> <=> %H_INFO{$^b}<order> } ) -> $key {
-            if $header{$key}:exists {
-                $out ~= self.sprint-header-line( $key, $header{$key} );
-            }
-        }
+
+        # Headers
+        $out ~= self.sprint-header-line: 'title', $task.title;
+        $out ~= self.sprint-header-line: 'created', $task.created;
+        $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-past if $task.expires.defined;
+
         $out ~= "\n";
 
-        for |$task<body> -> $body {
+        for |$task.body -> $body {
             $out ~= self.sprint-body($body);
             $out ~= "\n";
         }
@@ -450,22 +450,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         self.remove-lock();
     }
 
-    method sprint-header-line($header, $value is copy) {
-        my $alert = False;
-        if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'datetime' {
-            $value = localtime($value, :scalar);
-        }
-        if %H_INFO{$header}<type>:exists and %H_INFO{$header}<type> eq 'day' {
-            my $parsed = self.pretty-day($value);
-            if %H_INFO{$header}<alert-expire>:exists and %H_INFO{$header}<alert-expire> {
-                if Date.new($value) < Date.new(DateTime.now.local.Date.Str) {
-                    $alert = True;
-                    $parsed = "$value (expired)";
-                }
-            }
-            $value = $parsed;
-        }
-
+    multi method sprint-header-line(Str:D $header, Str:D $value, Bool :$alert?) {
         my $out = '';
 
         my $len = $H_LEN;
@@ -484,15 +469,28 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         return $out;
     }
 
-    method sprint-body($body) {
+    multi method sprint-header-line(Str:D $header, Date:D $value, Bool:D :$alert-in-past?) {
+        my $parsed = self.pretty-day($value);
+        if Date.new($value) < Date.new(DateTime.now.local.Date.Str) {
+            return self.sprint-header-line: $header, "$parsed (expired)", :alert;
+        } else {
+            return self.sprint-header-line: $header, $parsed;
+        }
+    }
+
+    multi method sprint-header-line(Str:D $header, DateTime:D $value) {
+        return self.sprint-header-line: $header, localtime($value.posix, :scalar);
+    }
+
+    method sprint-body(App::Tasks::TaskBody $body) {
         my $out =
             color("bold red") ~ "["
-        ~ localtime($body<date>, :scalar) ~ "]"
+        ~ localtime($body.date.posix, :scalar) ~ "]"
         ~ color('reset')
         ~ color('red') ~ ':'
         ~ color("reset") ~ "\n";
 
-        my $coloredtext = $body<body>;
+        my $coloredtext = $body.text;
         my $yellow      = color("yellow");
         $coloredtext   ~~ s:g/^^/$yellow/;
 
@@ -1315,9 +1313,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     }
 
     # Indirectly tested
-    method pretty-day(Str:D $raw where /^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/) {
-        my $dt = Date.new($raw);
-
+    method pretty-day(Date:D $dt) {
         state @days = « unknown Mon Tue Wed Thu Fri Sat Sun »;
         state @months = « unknown Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec »;
 
