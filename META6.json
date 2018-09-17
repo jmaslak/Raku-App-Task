@@ -1,5 +1,5 @@
 {
-  "auth" : "cpan:jmaslak",
+  "auth" : "cpan:JMASLAK",
   "authors" : [
     "Joelle Maslak"
   ],
@@ -19,7 +19,9 @@
   "name" : "App::Tasks",
   "perl" : "6.c",
   "provides" : {
-    "App::Tasks" : "lib/App/Tasks.pm6"
+    "App::Tasks" : "lib/App/Tasks.pm6",
+    "App::Tasks::Task" : "lib/App/Tasks/Task.pm6",
+    "App::Tasks::TaskBody" : "lib/App/Tasks/TaskBody.pm6"
   },
   "resources" : [ ],
   "source-url" : "https://gitlab.antelope.net/antelope/app-task.git",

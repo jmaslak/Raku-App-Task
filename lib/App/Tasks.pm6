@@ -813,7 +813,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         }
 
         if $interactive {
-            self.add-note($tasknum);
+            self.task-add-note($tasknum);
         }
 
         my $fn = self.get-task-filename($tasknum);
