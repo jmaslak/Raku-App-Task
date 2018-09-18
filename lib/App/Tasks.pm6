@@ -120,7 +120,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                     @args[0] = self.no-menu-prompt(
                         "$P1 Please enter source task number to move $P2",
                         @validtasks
-                    ) or exit;
+                    ).Int or exit;
                 }
                 if @args[1]:!exists {
                     @args[1] = self.uint-prompt( "$P1 Please enter desired location of task $P2" ) or exit;
@@ -132,7 +132,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                     @args[0] = self.no-menu-prompt(
                         "$P1 Please enter task number to show $P2",
                         @validtasks
-                    ) or exit;
+                    ).Int or exit;
                     say "";
                 }
                 self.task-show(|@args);
@@ -142,7 +142,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                     @args[0] = self.no-menu-prompt(
                         "$P1 Please enter task number to modify $P2",
                         @validtasks
-                    ) or exit;
+                    ).Int or exit;
                     @args[0] = @args[0].Int;
                     say "";
                 }
@@ -153,7 +153,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                     @args[0] = self.prompt(
                         "$P1 Please enter task number to close $P2",
                         [@validtasks]
-                    ) or exit;
+                    ).Int or exit;
                     say "";
                 }
                 self.task-close(|@args);
