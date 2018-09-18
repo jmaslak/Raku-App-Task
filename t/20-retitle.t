@@ -30,17 +30,17 @@ sub tests {
 
     my @tasks = $task.read-tasks;
     is @tasks.elems, 1, "Proper number of tasks exist";
-    is @tasks[0]<header><title>, "Subject Line", "Proper subject line";
-    is @tasks[0]<body>.elems, 0, "No notes found";
+    is @tasks[0].title, "Subject Line", "Proper subject line";
+    is @tasks[0].body.elems, 0, "No notes found";
 
     $task.task-retitle(1, "New Subject Line");
     @tasks = $task.read-tasks;
     is @tasks.elems, 1, "Proper number of tasks exist";
-    is @tasks[0]<header><title>, "New Subject Line", "Proper (updated) subject line";
-    is @tasks[0]<body>.elems, 1, "One note found";
+    is @tasks[0].title, "New Subject Line", "Proper (updated) subject line";
+    is @tasks[0].body.elems, 1, "One note found";
 
-    my $expected = "Title changed from:\n  Subject Line\nTo:\n  New Subject Line\n";
-    is @tasks[0]<body>[0]<body>, $expected, "Note is correct";
+    my $expected = "Title changed from:\n  Subject Line\nTo:\n  New Subject Line";
+    is @tasks[0].body[0].text, $expected, "Note is correct";
 
     is $task.LOCKCNT, 0, "Lock count is 0";
 

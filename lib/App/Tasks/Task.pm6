@@ -12,6 +12,7 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     has Int                  $.task-number;
     has IO::Path             $.data-dir;
+    has IO::Path             $.file;
     has Str                  $.title;
     has DateTime             $.created;
     has Date                 $.expires;
@@ -19,7 +20,7 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
-        my $file = get-task-file($data-dir, $task-number);
+        my $file  = get-task-file($data-dir, $task-number);
         my @lines = $file.lines;
 
         my Str      $title;
@@ -61,7 +62,7 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
             my @bodyline;
             while (@lines) {
                 if @lines[0] ~~ m/^ '--- ' \d+ $/ { last; }
-                push @bodyline = @lines.shift;
+                @bodyline.push: @lines.shift;
             }
 
             @body.push: App::Tasks::TaskBody.new(
@@ -74,6 +75,7 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
         return self.new(
             :task-number($task-number),
             :data-dir($data-dir),
+            :file($file),
             :title($title),
             :created($created),
             :expires($expires),
@@ -91,8 +93,10 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
         if ! self.title.defined    { die("Title field not found") }
         if ! self.created.defined  { die("Created field not found") }
 
-        my $file = self.data-dir.add( self.task-number.fmt("%05d") ~ "-none.task" );
-        my $fh = $file.open(:w);
+        if ! $.file.defined {
+            $!file = self.data-dir.add( self.task-number.fmt("%05d") ~ "-none.task" );
+        }
+        my $fh = $.file.open(:w);
 
         # Header, mandatory
         $fh.say: "Title: ",   self.title;
@@ -112,9 +116,9 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     # Add a task note to this object
     method add-note(Str:D $text) {
-        $text.chomp;
+        my $note-text = S/\n $// given $text;
 
-        my $note = App::Tasks::TaskBody.new(:date(DateTime.now), :text($text));
+        my $note = App::Tasks::TaskBody.new(:date(DateTime.now), :text($note-text));
         @!body.push: $note;
     }
 

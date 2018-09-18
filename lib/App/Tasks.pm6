@@ -27,10 +27,10 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     has IO::Path $.data-dir = gettaskdir();
 
-    has $!LOCK;
-    has $.LOCKCNT = 0;
-    has $.SEMAPHORE = Lock.new;
-    has @!TASKS;
+    has IO::Handle $!LOCK;
+    has Int:D $.LOCKCNT            = 0;
+    has Lock:D $.SEMAPHORE         = Lock.new;
+    has App::Tasks::Task:D @!TASKS;
 
     # Partially implemented - there be dragons here!
     has $.write-output is rw = True; # Write output to terminal, used for testing only.
@@ -543,6 +543,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         $task.to-file;
 
         self.remove-lock;
+        @!TASKS = Array.new;
     }
 
     # Tested
@@ -551,17 +552,18 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
         my @tasks = self.read-tasks();
         for @tasks -> $task {
-            if $task<header><expires>:exists {
-                if Date.new($task<header><expires>) < Date.new(DateTime.now.local.Date.Str) {
-                    self.add-note($task<number>, "Task expired, closed.");
-                    self.task-close($task<number>, :coalesce(False), :interactive(False));
+            if $task.expires.defined {
+                if $task.expires < Date.new(DateTime.now.local.Date.Str) {
+                    $task.add-note("Task expired, closed.");
+                    $task.to-file;
+                    self.task-close($task.task-number, :coalesce(False), :interactive(False));
                 }
             }
         }
         self.coalesce-tasks();
 
-        @!TASKS = Array.new;
         self.remove-lock;
+        @!TASKS = Array.new;
     }
 
     # Tested
@@ -864,14 +866,10 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
         @tasknums = @tasknums.sort( { $^a <=> $^b } ).list;
 
-        my $taskcnt = min(@tasknums.elems, $num ?? $num !! @tasknums.elems);
+        @!TASKS = @tasknums.race(batch => 1, degree => 16).map: {
+            App::Tasks::Task.from-file(self.data-dir, $^tasknum);
+        };
 
-        my %out;
-        race for @tasknums.race(batch => 1, degree => 16) -> $tasknum {
-            %out{$tasknum} = self.read-task($tasknum);
-        }
-
-        @!TASKS = %out.keys.sort( { $^a <=> $^b } ).map: { %out{$^a} };
         self.remove-lock;
         return @!TASKS;
     }
@@ -881,16 +879,16 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
         my @tasks = self.read-tasks($num);
 
-        my Int $maxnum = @tasks.map({ $^a<number>}).max;
+        my Int $maxnum = @tasks.map({ $^a.task-number }).max;
 
         my @out = @tasks.hyper.map: -> $task {
-            my $title = $task<header><title>;
+            my $title = $task.title;
             my $desc  = $title;
             if ( defined($wchars) ) {
                 $desc = substr( $title, 0, $wchars - $maxnum.chars - 1 );
             }
 
-            "$PINFOCOLOR$task<number> $PBOLDCOLOR$desc" ~ color('reset') ~ "\n"
+            "{$PINFOCOLOR}{$task.task-number} $PBOLDCOLOR$desc" ~ color('reset') ~ "\n"
         };
 
         self.remove-lock();

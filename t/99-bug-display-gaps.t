@@ -42,17 +42,17 @@ sub tests {
 
     my @tasks = $task.read-tasks;
     is @tasks.elems, 2, "Proper number of tasks exist (A)";
-    is @tasks[0]<header><title>, "Subject Line", "Proper subject line (1)";
-    is @tasks[1]<header><title>, "Second Task", "Proper subject line (2)";
-    is @tasks[0]<number>, 1, "Proper number (A1)";
-    is @tasks[1]<number>, 2, "Proper Number (A2)";
+    is @tasks[0].title, "Subject Line", "Proper subject line (1)";
+    is @tasks[1].title, "Second Task", "Proper subject line (2)";
+    is @tasks[0].task-number, 1, "Proper number (A1)";
+    is @tasks[1].task-number, 2, "Proper Number (A2)";
 
-    @tasks[0]<filename>.unlink;
+    @tasks[0].file.unlink;
     
     @tasks = $task.read-tasks;
     is @tasks.elems, 1, "Proper number of tasks exist (B)";
-    is @tasks[0]<header><title>, "Second Task", "Proper subject line (3)";
-    is @tasks[0]<number>, 2, "Proper number (B1)";
+    is @tasks[0].title, "Second Task", "Proper subject line (3)";
+    is @tasks[0].task-number, 2, "Proper number (B1)";
 
     is $task.LOCKCNT, 0, "Lock count is 0";
 
