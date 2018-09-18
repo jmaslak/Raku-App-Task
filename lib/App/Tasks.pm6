@@ -501,7 +501,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     # Tested
     method task-retitle(Int $tasknum? where { !$tasknum.defined or $tasknum > 0 }, Str $newtitle? is copy) {
-        self.add-lock();
+        self.add-lock;
 
         if ! self.check-task-log() {
             self.remove-lock();
@@ -532,20 +532,15 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     method retitle(Int $tasknum where * ~~ ^100_000, Str:D $newtitle) {
         self.add-lock;
 
-        my $fn = self.get-task-filename($tasknum) or die("Task not found");
-        my $task = self.read-task($tasknum);
-
-        my %note;
-        %note<date> = time;
-        %note<body> = "Title changed from:\n" ~
-                "  " ~ $task<header><title> ~ "\n" ~
+        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        my $note = "Title changed from:\n" ~
+                "  " ~ $task.title ~ "\n" ~
                 "To:\n" ~
                 "  " ~ $newtitle;
-        $task<body>.push: %note;
 
-        $task<header><title> = $newtitle;
-
-        self.write-task($tasknum, $task);
+        $task.add-note($note);
+        $task.change-title($newtitle);
+        $task.to-file;
 
         self.remove-lock;
     }

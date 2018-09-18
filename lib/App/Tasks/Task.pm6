@@ -118,6 +118,11 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
         @!body.push: $note;
     }
 
+    # Update title
+    method change-title(Str:D $text) {
+        $!title = $text;
+    }
+
     # Get the filename associated with a task number
     my sub get-task-file(IO::Path:D $data-dir, Int:D $task-number -->IO::Path) {
         my $partial-fn = $task-number.fmt("%05d");
