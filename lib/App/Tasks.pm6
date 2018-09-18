@@ -866,7 +866,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
         @tasknums = @tasknums.sort( { $^a <=> $^b } ).list;
 
-        @!TASKS = @tasknums.race(batch => 1, degree => 16).map: {
+        @!TASKS = @tasknums.hyper(batch => 1, degree => 16).map: {
             App::Tasks::Task.from-file(self.data-dir, $^tasknum);
         };
 
