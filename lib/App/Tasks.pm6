@@ -18,9 +18,14 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     my $P1         = '[task]';
     my $P2         = '> ';
 
-    my $PCOLOR     = color('reset bold cyan');
-    my $PBOLDCOLOR = color('reset bold green');
-    my $PINFOCOLOR = color('reset cyan');   # used to have dark
+    my $LIGHT = 1;
+    my $PCOLOR       = color('reset bold cyan');
+    my $PBOLDCOLOR   = $LIGHT ?? color('reset green') !! color('reset bold green');
+    my $PINFOCOLOR   = color('reset cyan');   # used to have dark
+    my $HEADERTITLE  = $LIGHT ?? color('28') !! color('bold green');
+    my $HEADERALERT  = $LIGHT ?? color('red') !! color('bold red');
+    my $HEADERNORMAL = $LIGHT ?? color('94') !! color('bold yellow');
+    my $BODYCOLOR    = $LIGHT ?? color('94') !! color('yellow');
 
     my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
     my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
@@ -455,12 +460,12 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
         my $len = $H_LEN;
 
-        $out ~= color("bold green");
+        $out ~= $HEADERTITLE;
         $out ~= sprintf( "%-{$len}s : ", %H_INFO{$header}<display> );
         if $alert {
-            $out ~= color("bold red");
+            $out ~= $HEADERALERT;
         } else {
-            $out ~= color("bold yellow");
+            $out ~= $HEADERNORMAL;
         }
         $out ~= $value;
         $out ~= color("reset");
@@ -484,14 +489,14 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     method sprint-body(App::Tasks::TaskBody $body) {
         my $out =
-            color("bold red") ~ "["
+            $HEADERALERT ~ "["
         ~ localtime($body.date.posix, :scalar) ~ "]"
         ~ color('reset')
         ~ color('red') ~ ':'
         ~ color("reset") ~ "\n";
 
         my $coloredtext = $body.text;
-        my $yellow      = color("yellow");
+        my $yellow      = $BODYCOLOR;
         $coloredtext   ~~ s:g/^^/$yellow/;
 
         $out ~= $coloredtext ~ color("reset");
@@ -881,7 +886,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
         my Int $maxnum = @tasks.map({ $^a.task-number }).max;
 
-        my @out = @tasks.hyper.map: -> $task {
+        my @out = @tasks.map: -> $task {
             my $title = $task.title;
             my $desc  = $title;
             if ( defined($wchars) ) {
