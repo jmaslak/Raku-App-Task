@@ -19,7 +19,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     my $P2         = '> ';
 
     my $LIGHT = 1;
-    my $PCOLOR       = color('reset bold cyan');
+    my $PCOLOR       = $LIGHT ?? color('reset cyan') !! color('reset bold cyan');
     my $PBOLDCOLOR   = $LIGHT ?? color('reset green') !! color('reset bold green');
     my $PINFOCOLOR   = color('reset cyan');   # used to have dark
     my $HEADERTITLE  = $LIGHT ?? color('28') !! color('bold green');
