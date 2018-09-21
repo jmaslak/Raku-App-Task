@@ -27,7 +27,7 @@ sub tests {
         '',
     );
     $task.INFH = MockInFH.new( :lines(@lines) );
-    is $task.task-new(), "00001", "Added new task";
+    is $task.task-new(), 1, "Added new task";
 
     my $day = DateTime.now.local.Date.Str;
     $task.task-set-expiration(1, $day);

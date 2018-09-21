@@ -26,7 +26,7 @@ sub tests {
         '',
     );
     $task.INFH = MockInFH.new( :lines(@lines) );
-    is $task.task-new(), "00001", "Added new task";
+    is $task.task-new(), 1, "Added new task";
 
     my @tasks = $task.read-tasks;
     is @tasks.elems, 1, "Proper number of tasks exist";
@@ -68,7 +68,7 @@ sub tests {
         '',
     );
     $task.INFH = MockInFH.new( :lines(@lines) );
-    is $task.task-new-expire-today(), "00002", "Added new task";
+    is $task.task-new-expire-today(), 2, "Added new task";
 
     $day = DateTime.now.local.Date.Str;
 

@@ -30,7 +30,7 @@ sub tests {
     is $task.LOCKCNT, 0, "Lock count is 0";
     is $task.get-task-filenames.elems, 0, "Proper number of tasks";
     is $task.LOCKCNT, 0, "Lock count is 0";
-    is $task.get-next-sequence.Int, 1, "Proper next sequence";
+    is $task.get-next-sequence, 1, "Proper next sequence";
 
     is $task.LOCKCNT, 0, "Lock count is 0";
     is $cwd, $*CWD, "Current working directory unchanged";
@@ -41,7 +41,7 @@ sub tests {
         '',
     );
     $task.INFH = MockInFH.new( :lines(@lines) );
-    is $task.task-new(), "00001", "Added new task";
+    is $task.task-new(), 1, "Added new task";
 
     done-testing;
 }

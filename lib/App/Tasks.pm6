@@ -175,20 +175,19 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         }
     }
 
-    # Has test
-    method get-next-sequence() {
+    # Indirectly tested
+    method get-next-sequence(-->Int) {
         self.add-lock();
-        my @d = self.get-task-filenames();
+        my @tasks = self.read-tasks();
 
-        my $seq = 1;
-        if @d.elems {
-            $seq = pop(@d).basename;
-            $seq ~~ s/ '-' .* $//;
-            $seq++;
+        my Int $seq = 1;
+        if @tasks.elems {
+            $seq = @tasks.map({ $^a.task-number }).max + 1;
+            if $seq > 99999 { die("Task number would be too large"); }
         }
         self.remove-lock();
 
-        return sprintf "%05d", $seq;
+        return $seq;
     }
 
     # Indirectly tested
@@ -215,7 +214,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     method task-new(Str $sub?) {
         self.add-lock;
 
-        my $seq = self.get-next-sequence;
+        my Int $seq = self.get-next-sequence;
 
         my $subject;
         if ! defined($sub) {
@@ -241,24 +240,20 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
             }
         }
 
-        my $tm = time.Str;
-
-        my %task;
-
-        %task<header> = Hash.new;
-        %task<header><created> = $tm;
-        %task<header><title> = $subject;
-
-        %task<body> = Array.new;
+        my $task = App::Tasks::Task.new(
+            :task-number($seq),
+            :data-dir(self.data-dir),
+            :title($subject),
+            :created(DateTime.now),
+        );
 
         if defined($body) {
-            my %note;
-            %note<date> = $tm;
-            %note<body> = $body;
-            %task<body>.push: %note;
+            $task.add-note($body);
         }
 
-        self.write-task($seq.Int, %task);
+        $task.to-file;
+        @!TASKS.push($task);
+
         self.remove-lock();
 
         say "Created task $seq";
@@ -291,7 +286,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
             return;
         }
 
-        my $end = self.get-next-sequence();
+        my Int $end = self.get-next-sequence;
         if ( $new >= $end ) {
             $new = $end - 1;
         }
@@ -626,25 +621,21 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     method set-expiration(Int $tasknum where * ~~ ^100_000, Date:D $day) {
         self.add-lock;
 
-        my $fn = self.get-task-filename($tasknum) or die("Task not found");
-        my $task = self.read-task($tasknum);
+        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
 
-        my %note;
-        %note<date> = time;
-        if $task<header><expires>:exists {
-            %note<body> = "Updated expiration date from " ~
-                    $task<header><expires> ~
-                    " to " ~ $day.Str;
+        my $note;
+        if $task.expires.defined {
+            $note = "Updated expiration date from " ~ $task.expires.Str ~ " to $day";
         } else {
-            %note<body> = "Added expiration date: " ~ $day;
+            $note = "Added expiration date: $day";
         }
-        $task<body>.push: %note;
 
-        $task<header><expires> = $day.Str;
-
-        self.write-task($tasknum, $task);
+        $task.add-note($note);
+        $task.change-expiration($day);
+        $task.to-file;
 
         self.remove-lock;
+        @!TASKS = Array.new;
     }
 
     # Tested
