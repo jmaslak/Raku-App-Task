@@ -19,13 +19,14 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     my $P2         = '> ';
 
     my $LIGHT = 1;
-    my $PCOLOR       = $LIGHT ?? color('reset cyan') !! color('reset bold cyan');
-    my $PBOLDCOLOR   = $LIGHT ?? color('reset green') !! color('reset bold green');
-    my $PINFOCOLOR   = color('reset cyan');   # used to have dark
-    my $HEADERTITLE  = $LIGHT ?? color('28') !! color('bold green');
-    my $HEADERALERT  = $LIGHT ?? color('red') !! color('bold red');
-    my $HEADERNORMAL = $LIGHT ?? color('94') !! color('bold yellow');
-    my $BODYCOLOR    = $LIGHT ?? color('94') !! color('yellow');
+    my $PCOLOR        = $LIGHT ?? color('reset cyan') !! color('reset bold cyan');
+    my $PBOLDCOLOR    = $LIGHT ?? color('reset green') !! color('reset bold green');
+    my $PINFOCOLOR    = color('reset cyan');   # used to have dark
+    my $HEADERTITLE   = $LIGHT ?? color('28') !! color('bold green');
+    my $HEADERALERT   = $LIGHT ?? color('red') !! color('bold red');
+    my $HEADERNORMAL  = $LIGHT ?? color('94') !! color('bold yellow');
+    my $BODYCOLOR     = $LIGHT ?? color('94') !! color('yellow');
+    my $IMMATURECOLOR = $LIGHT ?? color('yellow') !! color('yellow');
 
     my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
     my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
@@ -63,8 +64,14 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
             display      => 'Created',
             type         => 'datetime',
         },
-        expires => {
+        not-before => {
             order        => 3,
+            display      => 'Not-Before',
+            type         => 'day',
+            alert-before => True,
+        },
+        expires => {
+            order        => 4,
             display      => 'Expires',
             type         => 'day',
             alert-expire => True,
@@ -73,7 +80,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     my $H_LEN = %H_INFO.values.map( { .<display>.chars } ).max;
 
-    method start(@args is copy, Bool :$expire-today? = False) {
+    method start(@args is copy, Bool :$expire-today? = False, Bool :$show-immature? = False) {
         $*OUT.out-buffer = False;
 
         if ! @args.elems {
@@ -90,6 +97,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                 [ 'Retitle Tasks',              'retitle' ],
                 [ 'Set Task Expiration',        'set-expire' ],
                 [ 'Expire Tasks',               'expire' ],
+                [ 'Set Task Maturity Date',     'set-maturity' ],
                 [ 'Quit to Shell',              'quit' ],
             );
 
@@ -163,12 +171,13 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                 }
                 self.task-close(|@args);
             }
-            when 'list' { self.task-list(|@args) }
-            when 'monitor' { self.task-monitor(|@args) }
+            when 'list' { self.task-list(|@args, :$show-immature) }
+            when 'monitor' { self.task-monitor(|@args, :$show-immature) }
             when 'coalesce' { self.task-coalesce(|@args) }
             when 'retitle' { self.task-retitle(|@args) }
             when 'set-expire' { self.task-set-expiration(|@args) }
             when 'expire' { self.expire(|@args) }
+            when 'set-maturity' { self.task-set-maturity(|@args) }
             default {
                 say "WRONG USAGE";
             }
@@ -345,7 +354,8 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         # Headers
         $out ~= self.sprint-header-line: 'title', $task.title;
         $out ~= self.sprint-header-line: 'created', $task.created;
-        $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-past if $task.expires.defined;
+        $out ~= self.sprint-header-line: 'not-before', $task.not-before, :alert-in-future, :alert-in-past(False) if $task.not-before.defined;
+        $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-future(False), :alert-in-past if $task.expires.defined;
 
         $out ~= "\n";
 
@@ -401,10 +411,17 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         return $out;
     }
 
-    multi method sprint-header-line(Str:D $header, Date:D $value, Bool:D :$alert-in-past?) {
+    multi method sprint-header-line(
+        Str:D $header,
+        Date:D $value,
+        Bool:D :$alert-in-past?,
+        Bool:D :$alert-in-future?
+    ) {
         my $parsed = self.pretty-day($value);
         if Date.new($value) < Date.new(DateTime.now.local.Date.Str) {
             return self.sprint-header-line: $header, "$parsed (expired)", :alert;
+        } elsif Date.new($value) > Date.new(DateTime.now.local.Date.Str) {
+            return self.sprint-header-line: $header, "$parsed (future)", :alert;
         } else {
             return self.sprint-header-line: $header, $parsed;
         }
@@ -564,6 +581,78 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
         $task.add-note($note);
         $task.change-expiration($day);
+        $task.to-file;
+
+        self.remove-lock;
+        @!TASKS = Array.new;
+    }
+
+    # Tested
+    method task-set-maturity(Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 }, Str $day? is copy) {
+        self.add-lock();
+
+        if $day.defined {
+            if $day !~~ m/^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/ {
+                say "Invalid date format - please use YYYY-MM-DD format";
+                self.remove-lock;
+                return;
+            }
+        }
+
+        if ! self.check-task-log() {
+            self.remove-lock();
+            say "Can't set maturity date - task numbers may have changed since last 'task list'";
+            return;
+        }
+
+        if !$tasknum.defined {
+            my @d = self.get-task-filenames();
+            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
+
+            my $tn = self.no-menu-prompt(
+                "$P1 Please enter task number to modify $P2",
+                @validtasks
+            ) or exit;
+            $tasknum = $tn.Int;
+        }
+
+        while !$day.defined or $day eq '' {
+            $day = self.str-prompt("$P1 Please enter the day to start displaying this task $P2");
+            if $day !~~ m/^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/ {
+                say "Date format is incorrect\n";
+                $day = '';
+            }
+        }
+
+        my $now        = Date.new(DateTime.now.local.Date.Str);
+        my $not-before = Date.new($day);
+
+        if $not-before <= $now {
+            say "Date cannot be before or equal to today";
+            self.remove-lock;
+            return;
+        }
+
+        self.set-not-before($tasknum, $not-before);
+
+        self.remove-lock;
+    }
+
+    # Indirectly tested
+    method set-not-before(Int $tasknum where * ~~ ^100_000, Date:D $day) {
+        self.add-lock;
+
+        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+
+        my $note;
+        if $task.not-before.defined {
+            $note = "Updated not-before date from " ~ $task.not-before.Str ~ " to $day";
+        } else {
+            $note = "Added not-before date: $day";
+        }
+
+        $task.add-note($note);
+        $task.change-not-before($day);
         $task.to-file;
 
         self.remove-lock;
@@ -783,7 +872,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
     }
 
     # Tested
-    method read-tasks(Int $num? is copy where { !$num.defined or $num > 0}) {
+    method read-tasks() {
         self.add-lock;
         if @!TASKS.elems {
             self.remove-lock;
@@ -802,10 +891,29 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         return @!TASKS;
     }
 
-    method generate-task-list(Int $num? is copy where {!$num.defined or $num > 0}, $wchars?) {
+    method generate-task-list(
+        Int $num? is copy where {!$num.defined or $num > 0},
+        Int $wchars?,
+        Bool :$count-immature? = False
+    ) {
         self.add-lock();
 
-        my @tasks = self.read-tasks($num);
+        # Filter out tasks that we don't want to include because they
+        # aren't yet ripe.
+        my @tasks = self.read-tasks().grep: {
+            if $count-immature {
+                True;
+            } elsif ! $^task.not-before.defined {
+                True;
+            } elsif $^task.not-before > Date.new(DateTime.now.local.Date.Str) {
+                False;
+            }
+        };
+
+        # Limit number of tasks we display
+        if $num.defined and @tasks.elems > $num {
+            @tasks = @tasks[0..^$num];
+        }
 
         my Int $maxnum = @tasks.map({ $^a.task-number }).max;
 
@@ -816,7 +924,14 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                 $desc = substr( $title, 0, $wchars - $maxnum.chars - 1 );
             }
 
-            "{$PINFOCOLOR}{$task.task-number} $PBOLDCOLOR$desc" ~ color('reset') ~ "\n"
+            my $color = $PBOLDCOLOR;
+            if $task.not-before.defined {
+                if $task.not-before > Date.new(DateTime.now.local.Date.Str) {
+                    $color = $IMMATURECOLOR;
+                }
+            }
+
+            "{$PINFOCOLOR}{$task.task-number} $color$desc" ~ color('reset') ~ "\n"
         };
 
         self.remove-lock();
@@ -824,18 +939,21 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         return @out.join();
     }
 
-    method task-list(Int $num? where { !$num.defined or $num > 0 }) {
+    method task-list(
+        Int $num? where { !$num.defined or $num > 0 },
+        Bool :$show-immature? = False
+    ) {
         self.add-lock();
 
         self.update-task-log();    # So we know we've done this.
-        my $out = self.generate-task-list( $num, Nil );
+        my $out = self.generate-task-list( $num, Int, :count-immature($show-immature) );
 
         self.display-with-pager( "Tasklist", $out );
 
         self.remove-lock();
     }
 
-    method task-monitor() {
+    method task-monitor(Bool :$show-immature? = False) {
         self.task-monitor-show();
 
         react {
@@ -846,12 +964,12 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
                 done;
             }
             whenever Supply.interval(1) {
-                self.task-monitor-show();
+                self.task-monitor-show(:$show-immature);
             }
         }
     }
 
-    method task-monitor-show() {
+    method task-monitor-show(Bool :$show-immature? = False) {
         self.add-lock();
 
         state $last = 'x';  # Not '' because then we won't try to draw the initial
@@ -866,7 +984,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
         my $out = localtime(:scalar) ~ ' local / ' ~ gmtime(:scalar) ~ " UTC\n\n";
 
-        $out ~= self.generate-task-list( $rows - 3, $cols - 1 );
+        $out ~= self.generate-task-list( $rows - 3, $cols - 1, :count-immature($show-immature) );
         if $out ne $last {
             $last = $out;
             self.clear;

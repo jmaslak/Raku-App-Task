@@ -1,7 +1,5 @@
-Title: [task] feature: Consider allowing view of multiple tasks
-Created: 1437758237
---- 1437758237
-"task view 1 2 3" should work.
-
-Note that 1, 2, and 3 might be short, long, etc.  So paging needs to be 
-paid attention to.
+Title: [task] Performance, particularly of monitor command
+Created: 1535339295
+--- 1535339295
+We should cache the file reads that monitor does and/or parallelize the 
+reads.

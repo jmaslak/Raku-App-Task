@@ -59,8 +59,6 @@ sub tests {
     $expected = "Updated expiration date from $day to " ~ $day.succ;
     is @tasks[0].body[1].text, $expected, "Note is correct";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
-
 
     @lines = (
         '2 Subject Line',
@@ -96,6 +94,8 @@ sub tests {
     @tasks = $task.read-tasks;
     is @tasks.elems, 1, "C: Proper number of tasks exist";
     is @tasks[0].title, "2 Subject Line", "C: Proper subject line";
+
+    is $task.LOCKCNT, 0, "Lock count is 0";
 
     done-testing;
 }

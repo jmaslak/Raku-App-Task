@@ -1,4 +1,2 @@
-Title: [task] refactor: Make colorization more configurable
-Created: 1437578481
---- 1437578481
-Color strings shouldn't be hard coded anywhere.
+Title: [task] feature: List completed tasks with daterange support
+Created: 1437588125

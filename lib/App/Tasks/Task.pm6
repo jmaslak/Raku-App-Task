@@ -16,16 +16,19 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
     has Str                  $.title;
     has DateTime             $.created;
     has Date                 $.expires;
+    has Date                 $.not-before;  # Hide before this date
     has App::Tasks::TaskBody @.body;
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
         my $file  = get-task-file($data-dir, $task-number);
+        if ! $file.defined { die("Task $task-number does not exist\n"); }
         my @lines = $file.lines;
 
         my Str      $title;
         my DateTime $created;
         my Date     $expires;
+        my Date     $not-before;
 
         # Headers
         while (@lines) {
@@ -33,19 +36,20 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
             if @lines[0] ~~ m/^ '--- ' \d+ $/ { last; }
             
             my $line = @lines.shift;
-            if $line !~~ m/^ ( \w+ ) ':' \s* ( .* ) $/ {
+            if $line !~~ m/^ ( [ \- | \w ]+ ) ':' \s* ( .* ) $/ {
                 die("Invalid header line in " ~ $file.Str ~ ": $line");
             }
 
-            $line ~~ m/^ ( \w+ ) ':' \s* ( .* ) $/;
+            $line ~~ m/^ ( [ \- | \w ]+ ) ':' \s* ( .* ) $/;
             my $field = $0.Str.fc;
             my $value = $1.Str;
 
             given $field {
-                when 'title'   { $title   = $value }
-                when 'created' { $created = DateTime.new( $value.Int ) }
-                when 'expires' { $expires = Date.new($value) }
-                default        { die("Unknown header: $field") }
+                when 'title'      { $title   = $value }
+                when 'created'    { $created = DateTime.new( $value.Int ) }
+                when 'expires'    { $expires = Date.new($value) }
+                when 'not-before' { $not-before = Date.new($value) }
+                default           { die("Unknown header: $field") }
             }
         }
 
@@ -79,6 +83,7 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
             :title($title),
             :created($created),
             :expires($expires),
+            :not-before($not-before),
             :body(@body),
         );
     }
@@ -102,8 +107,9 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
         $fh.say: "Title: ",   self.title;
         $fh.say: "Created: ", self.created.posix;
 
-        # Header, optional
-        $fh.say: "Expires: ", self.expires if self.expires.defined;
+        # Headers, optional
+        $fh.say: "Expires: ",    self.expires    if self.expires.defined;
+        $fh.say: "Not-Before: ", self.not-before if self.not-before.defined;
 
         # Body
         for self.body -> $body {
@@ -130,6 +136,11 @@ class App::Tasks::Task:ver<0.0.1>:auth<cpan:JMASLAK> {
     # Update Expiration
     method change-expiration(Date $day) {
         $!expires = $day;
+    }
+
+    # Update Not-Before
+    method change-not-before(Date $day) {
+        $!not-before = $day;
     }
 
     # Get the filename associated with a task number

@@ -1,0 +1,8 @@
+Title: [task] feature: Colorize pending tasks differently
+Created: 1437508827
+--- 1437508857
+This should probably revert to standard coloring when it has been a while since an
+update.
+--- 1537570408
+We aren't reverting after time - we'll have a different command to deal 
+with that down the road.

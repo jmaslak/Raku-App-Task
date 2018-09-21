@@ -10,8 +10,12 @@ use lib $*PROGRAM.parent.add("lib");
 
 use App::Tasks;
 
-sub MAIN(+@args, :$expire-today?) {
+sub MAIN(+@args, Bool :$expire-today?, Bool :$show-immature?) {
     my $task = App::Tasks.new();
-    $task.start(@args, :expire-today($expire-today // False));
+    $task.start(
+        @args,
+        :$expire-today,
+        :$show-immature,
+    );
 }
 
