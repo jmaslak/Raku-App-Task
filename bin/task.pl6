@@ -98,10 +98,10 @@ instead.
 
 =head3 new
 
-  task.pl new
-  task.pl new <title>
-  task.pl --expire-today new
-  task.pl --expire-today new <title>
+  task.pl6 new
+  task.pl6 new <title>
+  task.pl6 --expire-today new
+  task.pl6 --expire-today new <title>
 
 Create a new task.  If a title is passed on the command line (as a single
 argument, so quotes may be needed if you have a multi-word title), it is
@@ -115,10 +115,10 @@ expiration date of today.  See L<#expire> for more details.
 
 =head3 list
 
-  task.pl list
-  task.pl list <max-items>
-  task.pl --show-immature list
-  task.pl --show-immature list <max-items>
+  task.pl6 list
+  task.pl6 list <max-items>
+  task.pl6 --show-immature list
+  task.pl6 --show-immature list <max-items>
 
 Display a list of active tasks.  Normally, only non-immature tasks are shown.
 If the C<--show-immature> option is provided, immature tasks are also shown.
@@ -128,23 +128,23 @@ be provided.
 
 =head3 show
 
-  task.pl <task-number>
-  task.pl show <task-number>
+  task.pl6 <task-number>
+  task.pl6 show <task-number>
 
 Display a task's details.  This uses the C<less> pager if needed.  All notes
 will be displayed with the task.
 
 =head3 monitor
 
-  task.pl monitor
-  task.pl --show-immature monitor
+  task.pl6 monitor
+  task.pl6 --show-immature monitor
 
 Displays an updating list of tasks that auto-refreshes.  It displays as many
 tasks as will fit on the screen.
 
 =head3 note
 
-  task.pl note <task-number>
+  task.pl6 note <task-number>
 
 Adds a note to a task.  The note is appended to the task.  Notes are visible
 via the L<#show> command.
@@ -154,7 +154,7 @@ in case the task numbers have changed.
 
 =head3 close
 
-  task.pl close <task-number>
+  task.pl6 close <task-number>
 
 Closes a task (moves it from the 
 
@@ -169,7 +169,7 @@ in case the task numbers have changed.
 
 =head3 retitle
 
-  task.pl retitle <task-number>
+  task.pl6 retitle <task-number>
 
 Change the title on a task.
 
@@ -178,7 +178,7 @@ in case the task numbers have changed.
 
 =head3 move
 
-  task.pl move <task-number> <new-number>
+  task.pl6 move <task-number> <new-number>
 
 Moves a task from it's current position to a new position (as seen by the list
 command).
@@ -191,7 +191,7 @@ in case the task numbers have changed.
 
 =head3 set-expire
 
-  task.pl set-expire <task-number>
+  task.pl6 set-expire <task-number>
 
 Set an expiration date.  This is the last day that the task is considered
 valid.  This is used for tasks that don't make sense after a given date.  For
@@ -205,7 +205,7 @@ in case the task numbers have changed.
 
 =head3 expire
 
-  task.pl expire
+  task.pl6 expire
 
 This closes any open tasks with an expiration date prior to the current date.
 It is suitable to run via crontab daily.
@@ -218,7 +218,7 @@ in case the task numbers have changed.
 
 =head3 set-maturity
 
-  task.pl set-maturity <task-number>
+  task.pl6 set-maturity <task-number>
 
 Sets the maturity date. Before the maturity date, a task will not be displayed
 with the L<#list> or L<#monitor> commands before the maturity date (unless the
@@ -227,7 +227,7 @@ commands).
 
 =head3 coalesce
 
-  task.pl coalesce
+  task.pl6 coalesce
 
 Coalesces task numbers, so that the first task becomes task number 1, and any
 gaps are filled in, moving tasks as required.  This is needed if tasks are
