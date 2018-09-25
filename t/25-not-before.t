@@ -59,6 +59,20 @@ sub tests {
     $expected = "Updated not-before date from $day to " ~ $day.succ;
     is @tasks[0].body[1].text, $expected, "Note is correct";
 
+    # Do it with the --maturity-date option
+    $task.INFH = MockInFH.new( :lines(@lines) );
+    is $task.task-new-maturity(:maturity-date(Date.new($day))), 2, "Added new task";
+
+    @tasks = $task.read-tasks;
+    is @tasks.elems, 2, "Proper number of tasks exist";
+    is @tasks[1].title, "Subject Line", "Proper subject line";
+    is @tasks[1].not-before.Str, $day, "Not-before header set properly";
+    is @tasks[1].body.elems, 1, "No notes found";
+
+    $expected = "Added not-before date: $day";
+    is @tasks[0].body[0].text, $expected, "Note is correct";
+
+
     is $task.LOCKCNT, 0, "Lock count is 0";
 
     done-testing;

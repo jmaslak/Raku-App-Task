@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Added --maturity=date=<date> command line option to "new" command
+    - Documentation fixes
 
 0.0.1  2018-09-21T19:22:29-06:00
     - Initial version

@@ -10,12 +10,20 @@ use lib $*PROGRAM.parent.add("lib");
 
 use App::Tasks;
 
-sub MAIN(+@args, Bool :$expire-today?, Bool :$show-immature?) {
+sub MAIN(
+    +@args,
+    Bool :$expire-today?,
+    Bool :$show-immature?,
+    Str  :$maturity-date? where { try Date.new($_) }
+) {
     my $task = App::Tasks.new();
+    my Date $md;
+    $md = Date.new($maturity-date) if $maturity-date;
     $task.start(
         @args,
         :$expire-today,
         :$show-immature,
+        :maturity-date($md),
     );
 }
 
@@ -102,6 +110,7 @@ instead.
   task.pl6 new <title>
   task.pl6 --expire-today new
   task.pl6 --expire-today new <title>
+  task.pl6 --maturity-date=2099-12-31 new
 
 Create a new task.  If a title is passed on the command line (as a single
 argument, so quotes may be needed if you have a multi-word title), it is
@@ -111,7 +120,11 @@ If a title is not provided, an interactive dialog with the user asks for the
 title, and, optionally a more detailed set of notes.
 
 If the C<--expire-today> option is provided, the new task will have an
-expiration date of today.  See L<#expire> for more details.
+expiration date of today.  See L<#expire> for more details.  This is not
+compatibile with the C<--maturity-date> option.
+
+If the C<--maturity-date> option is provided, this sets the maturity date
+for the task.  See L<#set-maturity> for more information.
 
 =head3 list
 
@@ -251,6 +264,12 @@ expire today (see the L<#expire> option for more details).
 Show all open tasks.  Normally, tasks that are "immature" (see the
 L#<set-maturity> command) are not displayed by the L<#monitor> or L<#list>
 commands.  This option changes that behavior.
+
+=head3 --maturity-date=YYYY-MM-DD
+
+Sets the maturity date for the L<#new> command when creating a task.  Not
+valid with the C<--expire-today> option.  This will be the first day the
+task shows up in basic C<task list> output.
 
 =head1 AUTHOR
 

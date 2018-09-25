@@ -4,7 +4,7 @@
 #
 use v6;
 
-class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
+class App::Tasks:ver<0.0.2>:auth<cpan:JMASLAK> {
     use App::Tasks::Task;
     use Digest::SHA1::Native;
     use File::Temp;
@@ -80,7 +80,12 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
 
     my $H_LEN = %H_INFO.values.map( { .<display>.chars } ).max;
 
-    method start(@args is copy, Bool :$expire-today? = False, Bool :$show-immature? = False) {
+    method start(
+        @args is copy,
+        Bool :$expire-today? = False,
+        Bool :$show-immature? = False,
+        Date :$maturity-date?,
+    ) {
         $*OUT.out-buffer = False;
 
         if ! @args.elems {
@@ -119,7 +124,17 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         my $cmd = @args.shift.fc;
         given $cmd {
             when $_ eq 'new' or $_ eq 'add' {
-                if $expire-today {
+                if $maturity-date and $expire-today {
+                    die("Cannot use both the --expire-today and --maturity-date options simultaniously\n");
+                } elsif $maturity-date {
+                    if $expire-today {
+                        die("Cannot use both the --expire-today and --maturity-date options simultaniously\n");
+                    }
+                    my $old = $!check-freshness;
+                    $!check-freshness = False;
+                    self.task-new-maturity(|@args, :$maturity-date);
+                    $!check-freshness = $old;
+                } elsif $expire-today {
                     my $old = $!check-freshness;
                     $!check-freshness = False;
                     self.task-new-expire-today(|@args);
@@ -208,7 +223,7 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         return @out;
     }
 
-    # Has task
+    # Has test
     method task-new-expire-today(Str $sub?) {
         self.add-lock;
 
@@ -218,6 +233,18 @@ class App::Tasks:ver<0.0.1>:auth<cpan:JMASLAK> {
         self.remove-lock;
         return $task;
     }
+
+    # Has test
+    method task-new-maturity(Str $sub?, Date:D :$maturity-date) {
+        self.add-lock;
+
+        my $task = self.task-new($sub);
+        self.task-set-maturity($task.Int, $maturity-date.Str);
+
+        self.remove-lock;
+        return $task;
+    }
+
 
     # Has test
     method task-new(Str $sub?) {
