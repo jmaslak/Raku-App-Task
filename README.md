@@ -80,23 +80,26 @@ When `task.pl` is executed without any options, it enters an interactive mode. T
 
 ### new
 
-    task.pl new
-    task.pl new <title>
-    task.pl --expire-today new
-    task.pl --expire-today new <title>
+    task.pl6 new
+    task.pl6 new <title>
+    task.pl6 --expire-today new
+    task.pl6 --expire-today new <title>
+    task.pl6 --maturity-date=2099-12-31 new
 
 Create a new task. If a title is passed on the command line (as a single argument, so quotes may be needed if you have a multi-word title), it is simply created with an empty body.
 
 If a title is not provided, an interactive dialog with the user asks for the title, and, optionally a more detailed set of notes.
 
-If the `--expire-today` option is provided, the new task will have an expiration date of today. See [#expire](#expire) for more details.
+If the `--expire-today` option is provided, the new task will have an expiration date of today. See [#expire](#expire) for more details. This is not compatibile with the `--maturity-date` option.
+
+If the `--maturity-date` option is provided, this sets the maturity date for the task. See [#set-maturity](#set-maturity) for more information.
 
 ### list
 
-    task.pl list
-    task.pl list <max-items>
-    task.pl --show-immature list
-    task.pl --show-immature list <max-items>
+    task.pl6 list
+    task.pl6 list <max-items>
+    task.pl6 --show-immature list
+    task.pl6 --show-immature list <max-items>
 
 Display a list of active tasks. Normally, only non-immature tasks are shown. If the `--show-immature` option is provided, immature tasks are also shown.
 
@@ -104,21 +107,21 @@ Optionally, an integer specifying the maximum number of items to display can be 
 
 ### show
 
-    task.pl <task-number>
-    task.pl show <task-number>
+    task.pl6 <task-number>
+    task.pl6 show <task-number>
 
 Display a task's details. This uses the `less` pager if needed. All notes will be displayed with the task.
 
 ### monitor
 
-    task.pl monitor
-    task.pl --show-immature monitor
+    task.pl6 monitor
+    task.pl6 --show-immature monitor
 
 Displays an updating list of tasks that auto-refreshes. It displays as many tasks as will fit on the screen.
 
 ### note
 
-    task.pl note <task-number>
+    task.pl6 note <task-number>
 
 Adds a note to a task. The note is appended to the task. Notes are visible via the [#show](#show) command.
 
@@ -126,7 +129,7 @@ You must have done a [#list](#list) in the current window before you can make no
 
 ### close
 
-    task.pl close <task-number>
+    task.pl6 close <task-number>
 
 Closes a task (moves it from the 
 
@@ -138,7 +141,7 @@ You must have done a [#list](#list) in the current window before you can make no
 
 ### retitle
 
-    task.pl retitle <task-number>
+    task.pl6 retitle <task-number>
 
 Change the title on a task.
 
@@ -146,7 +149,7 @@ You must have done a [#list](#list) in the current window before you can make no
 
 ### move
 
-    task.pl move <task-number> <new-number>
+    task.pl6 move <task-number> <new-number>
 
 Moves a task from it's current position to a new position (as seen by the list command).
 
@@ -156,7 +159,7 @@ You must have done a [#list](#list) in the current window before you can make no
 
 ### set-expire
 
-    task.pl set-expire <task-number>
+    task.pl6 set-expire <task-number>
 
 Set an expiration date. This is the last day that the task is considered valid. This is used for tasks that don't make sense after a given date. For instance, if you add a task to buy a Christmas turkey, if you don't actually do that task before Christmas, it's likely not relevant after Christmas. Thus, you might set an expiration date of December 25th. At that point, it will be pruned by the [#expire](#expire) command.
 
@@ -164,7 +167,7 @@ You must have done a [#list](#list) in the current window before you can make no
 
 ### expire
 
-    task.pl expire
+    task.pl6 expire
 
 This closes any open tasks with an expiration date prior to the current date. It is suitable to run via crontab daily.
 
@@ -174,13 +177,13 @@ You must have done a [#list](#list) in the current window before you can make no
 
 ### set-maturity
 
-    task.pl set-maturity <task-number>
+    task.pl6 set-maturity <task-number>
 
 Sets the maturity date. Before the maturity date, a task will not be displayed with the [#list](#list) or [#monitor](#monitor) commands before the maturity date (unless the `--show-immature` option is also provided to the [#list](#list) or [#monitor](#monitor) commands).
 
 ### coalesce
 
-    task.pl coalesce
+    task.pl6 coalesce
 
 Coalesces task numbers, so that the first task becomes task number 1, and any gaps are filled in, moving tasks as required. This is needed if tasks are deleted outside of the `task.pl6` program.
 
@@ -198,6 +201,10 @@ This option is used along with the [#new](#new) command to create a task that wi
 ### --show-immature
 
 Show all open tasks. Normally, tasks that are "immature" (see the L#<set-maturity> command) are not displayed by the [#monitor](#monitor) or [#list](#list) commands. This option changes that behavior.
+
+### --maturity-date=YYYY-MM-DD
+
+Sets the maturity date for the [#new](#new) command when creating a task. Not valid with the `--expire-today` option. This will be the first day the task shows up in basic `task list` output.
 
 AUTHOR
 ======
