@@ -14,7 +14,7 @@ sub MAIN(
     +@args,
     Bool :$expire-today?,
     Bool :$show-immature?,
-    Str  :$maturity-date? where { try Date.new($_) }
+    Str  :$maturity-date? where { !$_.defined or try Date.new($_) }
 ) {
     my $task = App::Tasks.new();
     my Date $md;
