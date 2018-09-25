@@ -114,7 +114,7 @@ class App::Tasks:ver<0.0.3>:auth<cpan:JMASLAK> {
         }
 
         if @args.elems == 1 {
-            if @args[0] ~~ m:s/^ \d+ $/ {
+            if @args[0] ~~ m/^ \d+ $/ {
                 @args.unshift: 'view';      # We view the task if one arg entered
             }
         }
@@ -217,7 +217,7 @@ class App::Tasks:ver<0.0.3>:auth<cpan:JMASLAK> {
     # Indirectly tested
     method get-task-filenames() {
         self.add-lock;
-        my @out = self.data-dir.dir(test => { m:s/^ \d+ '-' .* \.task $ / }).sort;
+        my @out = self.data-dir.dir(test => { m/^ \d+ '-' .* \.task $ / }).sort;
         self.remove-lock;
 
         return @out;
@@ -1209,7 +1209,7 @@ class App::Tasks:ver<0.0.3>:auth<cpan:JMASLAK> {
         say "";
 
         while defined my $line = self.prompt($prompt) {
-            if $line !~~ m:s/ ^ \d+ $ / {
+            if $line !~~ m/ ^ \d+ $ / {
                 return $line;
             }
 
