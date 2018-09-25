@@ -7,7 +7,7 @@ use v6;
 
 use v6;
 
-class App::Tasks::TaskBody:ver<0.0.2>:auth<cpan:JMASLAK> {
+class App::Tasks::TaskBody:ver<0.0.3>:auth<cpan:JMASLAK> {
     has DateTime $.date;
     has Str      $.text;
 }
