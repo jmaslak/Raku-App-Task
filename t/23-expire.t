@@ -56,7 +56,7 @@ sub tests {
     is @tasks[0].expires.Str, Date.new($day).succ.Str, "Expires header correct";
     is @tasks[0].body.elems, 2, "Two notes found";
 
-    $expected = "Updated expiration date from $day to " ~ $day.succ;
+    $expected = "Updated expiration date from $day to " ~ Date.new($day).succ.Str;
     is @tasks[0].body[1].text, $expected, "Note is correct";
 
 
