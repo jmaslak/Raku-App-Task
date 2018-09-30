@@ -932,7 +932,9 @@ class App::Tasks:ver<0.0.3>:auth<cpan:JMASLAK> {
                 True;
             } elsif ! $^task.not-before.defined {
                 True;
-            } elsif $^task.not-before > Date.new(DateTime.now.local.Date.Str) {
+            } elsif $^task.not-before ≤ Date.new(DateTime.now.local.Date.Str) {
+                True;
+            } else {
                 False;
             }
         };
