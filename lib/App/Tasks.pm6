@@ -4,7 +4,7 @@
 #
 use v6;
 
-class App::Tasks:ver<0.0.3>:auth<cpan:JMASLAK> {
+class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
     use App::Tasks::Task;
     use Digest::SHA1::Native;
     use File::Temp;

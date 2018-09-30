@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.0.4  2018-09-30T15:11:40-06:00
     - [BUGFIX] Tasks with a not-before date in the past weren't showing
       properly in "list".
     - [BUGFIX] Tests failed when run on the last day of the month.
