@@ -1,5 +1,5 @@
-Title: [task] feature: Use vi (and set up right extensions and such)
-Created: 1439412995
---- 1439412995
-We should be able to use VI.  It would be helpful if a stable extension 
-was used for this.
+Title: [task] Performance, particularly of monitor command
+Created: 1535339295
+--- 1535339295
+We should cache the file reads that monitor does and/or parallelize the 
+reads.

@@ -1,0 +1,6 @@
+Title: [task] refactor: Make colorization more configurable
+Created: 1437578481
+--- 1437578481
+Color strings shouldn't be hard coded anywhere.
+--- 1538856494
+Done.

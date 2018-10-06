@@ -5,7 +5,9 @@
 use v6;
 
 class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
+    use App::Tasks::Config;
     use App::Tasks::Task;
+
     use Digest::SHA1::Native;
     use File::Temp;
     use NativeCall;
@@ -18,16 +20,6 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
     my $P1         = '[task]';
     my $P2         = '> ';
 
-    my $LIGHT = 1;
-    my $PCOLOR        = $LIGHT ?? color('reset cyan') !! color('reset bold cyan');
-    my $PBOLDCOLOR    = $LIGHT ?? color('reset green') !! color('reset bold green');
-    my $PINFOCOLOR    = color('reset cyan');   # used to have dark
-    my $HEADERTITLE   = $LIGHT ?? color('28') !! color('bold green');
-    my $HEADERALERT   = $LIGHT ?? color('red') !! color('bold red');
-    my $HEADERNORMAL  = $LIGHT ?? color('94') !! color('bold yellow');
-    my $BODYCOLOR     = $LIGHT ?? color('94') !! color('yellow');
-    my $IMMATURECOLOR = $LIGHT ?? color('yellow') !! color('yellow');
-
     my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
     my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
 
@@ -37,6 +29,7 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
     has Int:D $.LOCKCNT            = 0;
     has Lock:D $.SEMAPHORE         = Lock.new;
     has App::Tasks::Task:D @!TASKS;
+    has App::Tasks::Config:D $.config = App::Tasks::Config.read-config();
 
     # Partially implemented - there be dragons here!
     has $.write-output is rw = True; # Write output to terminal, used for testing only.
@@ -106,7 +99,7 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
                 [ 'Quit to Shell',              'quit' ],
             );
 
-            say "{$PCOLOR}Please select an option...\n";
+            say "{$.config.prompt-color}Please select an option...\n";
             my $command = self.menu-prompt("$P1 $P2", @choices);
             @args.push($command // 'quit');
 
@@ -424,15 +417,15 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
 
         my $len = $H_LEN;
 
-        $out ~= $HEADERTITLE;
+        $out ~= $.config.header-title-color;
         $out ~= sprintf( "%-{$len}s : ", %H_INFO{$header}<display> );
         if $alert {
-            $out ~= $HEADERALERT;
+            $out ~= $.config.header-alert-color;
         } else {
-            $out ~= $HEADERNORMAL;
+            $out ~= $.config.header-normal-color;
         }
         $out ~= $value;
-        $out ~= color("reset");
+        $out ~= $.config.reset;
         $out ~= "\n";
 
         return $out;
@@ -459,18 +452,16 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
     }
 
     method sprint-body(App::Tasks::TaskBody $body) {
-        my $out =
-            $HEADERALERT ~ "["
-        ~ localtime($body.date.posix, :scalar) ~ "]"
-        ~ color('reset')
-        ~ color('red') ~ ':'
-        ~ color("reset") ~ "\n";
+        my $out = $.config.header-alert-color ~ "["
+            ~ localtime($body.date.posix, :scalar) ~ "]"
+            ~ $.config.header-seperator-color ~ ':'
+            ~ $.config.reset ~ "\n";
 
         my $coloredtext = $body.text;
-        my $yellow      = $BODYCOLOR;
-        $coloredtext   ~~ s:g/^^/$yellow/;
+        my $bcolor = $.config.body-color;
+        $coloredtext   ~~ s:g/^^/$bcolor/;
 
-        $out ~= $coloredtext ~ color("reset");
+        $out ~= $coloredtext ~ $.config.reset;
 
         return $out;
     }
@@ -759,11 +750,11 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
     }
 
     method get-note-from-user-internal() {
-        print color("bold cyan") ~ "Enter Note Details" ~ color("reset");
+        print color("bold cyan") ~ "Enter Note Details" ~ $.config.reset;
         say color("cyan")
-        ~ " (Use '.' on a line by itself when done)"
-        ~ color("bold cyan") ~ ":"
-        ~ color("reset");
+            ~ " (Use '.' on a line by itself when done)"
+            ~ color("bold cyan") ~ ":"
+            ~ $.config.reset;
 
         my $body = '';
         while defined my $line = self.IN-FH.get {
@@ -953,14 +944,14 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
                 $desc = substr( $title, 0, $wchars - $maxnum.chars - 1 );
             }
 
-            my $color = $PBOLDCOLOR;
+            my $color = $.config.prompt-bold-color;
             if $task.not-before.defined {
                 if $task.not-before > Date.new(DateTime.now.local.Date.Str) {
-                    $color = $IMMATURECOLOR;
+                    $color = $.config.immature-task-color;
                 }
             }
 
-            "{$PINFOCOLOR}{$task.task-number} $color$desc" ~ color('reset') ~ "\n"
+            "{$.config.prompt-info-color}{$task.task-number} $color$desc" ~ $.config.reset ~ "\n"
         };
 
         self.remove-lock();
@@ -987,7 +978,7 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
 
         react {
             whenever key-pressed(:!echo) {
-                say color("reset");
+                say $.config.reset;
                 say "";
                 say "Exiting.";
                 done;
@@ -1018,7 +1009,7 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
             $last = $out;
             self.clear;
             print $out;
-            print color("reset");
+            print $.config.reset;
             print "     ...Type any character to exit...  ";
         }
 
@@ -1177,7 +1168,7 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
         for %elems.keys.sort({$^a <=> $^b}) -> $key {
             my $elem = %elems{$key};
 
-            printf "{$PBOLDCOLOR}%{$width}d.{$PINFOCOLOR} %s\n", $key, $elem<description>;
+            printf "{$.config.prompt-bold-color}%{$width}d.{$.config.prompt-info-color} %s\n", $key, $elem<description>;
         }
 
         say "";
@@ -1257,7 +1248,7 @@ class App::Tasks:ver<0.0.4>:auth<cpan:JMASLAK> {
     }
 
     method prompt($prompt) {
-        my $outprompt = $PCOLOR ~ $prompt ~ color('reset');
+        my $outprompt = $.config.prompt-color ~ $prompt ~ $.config.reset;
         print $outprompt if $.write-output;
         return $.INFH.get;
     }

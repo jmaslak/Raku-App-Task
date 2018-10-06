@@ -1,4 +1,10 @@
-Title: [task] BUG: Need to validate cmd line params
-Created: 1437630110
---- 1437630110
-We should fail nicer on bogus cmd line arguments.
+Title: [task] BUG: No confirmation on close without note
+Created: 1437711367
+--- 1437711367
+If you close a task (task close x), and say "Y" to enter a note, but 
+then don't add anything in the note, it will close the task without 
+confirmation.
+--- 1437711435
+This may be a bit trickier than I frist thought, since the "Save this 
+task" confirmation is in the addnote() routine.  It probably should be 
+broken out to it's own routine.

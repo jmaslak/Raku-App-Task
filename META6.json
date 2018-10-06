@@ -12,7 +12,8 @@
     "P5localtime",
     "Term::termios",
     "Term::ReadKey",
-    "Terminal::ANSIColor"
+    "Terminal::ANSIColor",
+    "Yamlish"
   ],
   "description" : "Task Management CLI Appliication",
   "license" : "Artistic-2.0",
@@ -20,6 +21,7 @@
   "perl" : "6.c",
   "provides" : {
     "App::Tasks" : "lib/App/Tasks.pm6",
+    "App::Tasks::Config" : "lib/App/Tasks/Config.pm6",
     "App::Tasks::Task" : "lib/App/Tasks/Task.pm6",
     "App::Tasks::TaskBody" : "lib/App/Tasks/TaskBody.pm6"
   },

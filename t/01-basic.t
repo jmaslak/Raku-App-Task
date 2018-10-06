@@ -1,6 +1,7 @@
 use v6.c;
 use Test;
 use App::Tasks;
+use App::Tasks::Config;
 
 use File::Temp;
 
@@ -21,7 +22,7 @@ sub tests {
     my $cwd = $*CWD;
     say $*CWD;
 
-    my $task = App::Tasks.new( :data-dir($tmpdir) );
+    my $task = App::Tasks.new( :data-dir($tmpdir), :config(App::Tasks::Config.no-color) );
 
     is $task.WHAT, App::Tasks, "Initialized class";
     is $task.data-dir, $tmpdir, "Data directory matches";

@@ -4,6 +4,7 @@ use v6.c;
 
 use Test;
 use App::Tasks;
+use App::Tasks::Config;
 
 use File::Temp;
 
@@ -21,7 +22,7 @@ sub tests {
     my $tmpdir = tempdir.IO;    # Get IO::Path object for tmpdir.
     note "# Using directory {$tmpdir.Str}";
 
-    my $task = App::Tasks.new( :data-dir($tmpdir) );
+    my $task = App::Tasks.new( :data-dir($tmpdir), :config(App::Tasks::Config.no-color) );
 
     #
     # Valid N

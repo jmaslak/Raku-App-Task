@@ -69,6 +69,11 @@ This enviornmental variable determines where the task database (files) reside. O
 
 The default, if the environmental variable is not set, is `%ENV<HOME>/.task` if the `HOME` environmental variable is set. If the `HOME` environmental variable is not set, it it will be `.task` under the user's current working directory.
 
+CONFIGURATION
+-------------
+
+Optional, a configuration file can be installed in the user's home directory. If a file named `.task.yaml` is located there, it is parsed as described in the [App::Tasks::Config](App::Tasks::Config) documentation.
+
 COMMANDS
 --------
 

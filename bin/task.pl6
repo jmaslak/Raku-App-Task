@@ -94,6 +94,12 @@ if the C<HOME> environmental variable is set.  If the C<HOME> environmental
 variable is not set, it it will be C<.task> under the user's current working
 directory.
 
+=head2 CONFIGURATION
+
+Optional, a configuration file can be installed in the user's home directory.
+If a file named C<.task.yaml> is located there, it is parsed as described in
+the L<App::Tasks::Config> documentation.
+
 =head2 COMMANDS
 
 =head3 No command line options
