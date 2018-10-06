@@ -13,7 +13,7 @@
     "Term::termios",
     "Term::ReadKey",
     "Terminal::ANSIColor",
-    "Yamlish"
+    "YAMLish"
   ],
   "description" : "Task Management CLI Appliication",
   "license" : "Artistic-2.0",
