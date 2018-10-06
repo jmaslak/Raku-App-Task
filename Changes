@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.0.5  2018-10-06T15:54:27-06:00
     - Coloraization is configurable via $*HOME/.task.yaml file
 
 0.0.4  2018-09-30T15:11:40-06:00
