@@ -20,9 +20,6 @@ class App::Tasks:ver<0.0.5>:auth<cpan:JMASLAK> {
     my $P1         = '[task]';
     my $P2         = '> ';
 
-    my @PAGERCMD  = qw/less -RFX -P%PROMPT% -- %FILENAME%/;
-    my @EDITORCMD = <nano -r 72 -s ispell +3,1 %FILENAME%>;
-
     has IO::Path $.data-dir = gettaskdir();
 
     has IO::Handle $!LOCK;
@@ -742,11 +739,7 @@ class App::Tasks:ver<0.0.5>:auth<cpan:JMASLAK> {
     }
 
     method get-note-from-user() {
-        if ! @EDITORCMD {
-            return self.get-note-from-user-internal();
-        } else {
-            return self.get-note-from-user-external();
-        }
+        return self.get-note-from-user-external();
     }
 
     method get-note-from-user-internal() {
@@ -789,7 +782,7 @@ class App::Tasks:ver<0.0.5>:auth<cpan:JMASLAK> {
         $tmp.say: '-' x 72;
         $tmp.close;
 
-        my @cmd = map { S:g/'%FILENAME%'/$filename/ }, @EDITORCMD;
+        my @cmd = map { S:g/'%FILENAME%'/$filename/ }, $.config.editor-command.split(/\s+/);
         run(@cmd);
 
         my @lines = $filename.IO.lines;
@@ -868,25 +861,19 @@ class App::Tasks:ver<0.0.5>:auth<cpan:JMASLAK> {
         self.remove-lock();
     }
 
-    # XXX Need a non-colorized option
     method display-with-pager($description, $contents) {
-        if @PAGERCMD.elems {
-            my ($filename, $tmp) = tempfile(:unlink);
-            $tmp.print: $contents;
-            $tmp.close;
+        my ($filename, $tmp) = tempfile(:unlink);
+        $tmp.print: $contents;
+        $tmp.close;
 
-            my $out = "$description ( press h for help or q to quit ) ";
+        my $out = "$description ( press h for help or q to quit ) ";
 
-            my @pager;
-            for @PAGERCMD -> $part is copy {
-                $part ~~ s:g/'%PROMPT%'/$out/;
-                $part ~~ s:g/'%FILENAME%'/$filename/;
-                @pager.push: $part;
-            }
-            run(@pager);
-        } else {
-            print $contents;
-        }
+        my @pager =
+            map { S:g/'%FILENAME%'/$filename/ },
+            map { S:g/'%PROMPT%'/$out/ },
+            $.config.pager-command.split(/\s+/);
+
+        run(@pager);
     }
 
     # Tested

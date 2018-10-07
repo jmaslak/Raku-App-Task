@@ -1,0 +1,8 @@
+Title: [task] [bug] Editor & pager command don't support quotes
+Created: 1538951069
+--- 1538951069
+An editor or pager command that has double-quoted or single-quoted 
+strings isn't properly parsed - any spaces inside are treated as if they 
+seperate parameters for the shell callout, when the spaces should 
+instead be treated as part of the command.  We'll need to think through 
+the best approach for this.

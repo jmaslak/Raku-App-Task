@@ -70,5 +70,17 @@ subtest 'none', {
     done-testing;
 }
 
+subtest 'editor-pager', {
+    my ($fn, $fh) = tempfile;
+    $fh.say: "editor-command: 'foo %FILENAME%'";
+    $fh.say: "pager-command:  'bar %PROMPT% %FILENAME%'";
+    $fh.close;
+
+    my $conf = App::Tasks::Config.read-config($fn.IO);
+
+    is $conf.editor-command, 'foo %FILENAME%', 'pager command';
+    is $conf.pager-command, 'bar %PROMPT% %FILENAME%', 'prompt command';
+}
+
 done-testing;
 

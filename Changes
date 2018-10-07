@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Configuration via $*HOME/.task.yaml of editor and pager commands
 
 0.0.5  2018-10-06T15:54:27-06:00
     - Coloraization is configurable via $*HOME/.task.yaml file

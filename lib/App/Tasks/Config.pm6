@@ -21,6 +21,9 @@ class App::Tasks::Config:ver<0.0.5>:auth<cpan:JMASLAK> {
     has Str $.prompt-info-color       is rw;
     has Str $.reset                   is rw;
 
+    has Str $.pager-command           is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
+    has Str $.editor-command          is rw = 'nano -r 72 -s ispell +3,1 %FILENAME%';
+
     method read-config(IO::Path:D $config-file? = $*HOME.add('.task.yaml')) {
         my $contents = '';
         if $config-file.e {
@@ -67,6 +70,9 @@ class App::Tasks::Config:ver<0.0.5>:auth<cpan:JMASLAK> {
         $obj.prompt-color           = c($y, 'prompt-color')           if $y<prompt-color>:exists;
         $obj.prompt-info-color      = c($y, 'prompt-info-color')      if $y<prompt-info-color>:exists;
         $obj.reset                  = c($y, 'reset')                  if $y<reset>:exists;
+
+        $obj.pager-command          = $y<pager-command>:delete        if $y<pager-command>:exists;
+        $obj.editor-command         = $y<editor-command>:delete       if $y<editor-command>:exists;
 
         if $y.keys.list.elems > 0 {
             die("Unknown configuration keys: " ~ $y.keys);
@@ -118,6 +124,11 @@ class App::Tasks::Config:ver<0.0.5>:auth<cpan:JMASLAK> {
         $!reset                  = '';
     }
 
+    #
+    # These two multis (c()) colorize a string or, if passed a hash &
+    # key, colorize the hash value pointed at by the key and then delete
+    # the hash element.
+    #
     my multi sub c(Str:D $color-info -->Str:D) {
         # Right now, we just pass the string to color() from Terminal::ANSIColor
         if $color-info ~~ /\W reset \W/ {
@@ -156,10 +167,10 @@ file.
 
   theme: dark
   immature-task-color: 'bold red'
+  editor-command: 'nano +3,1 %FILENAME%'
 
 First, if a C<theme> key is present, that is used to determine the default
-
-elements (named the same as the class's attributres).  For the config file,
+colors (named the same as the class's attributres).  For the config file,
 the value of the colors must be valid for the C<Terminal::ANSIColor> module's
 C<color> sub.
 
@@ -168,6 +179,9 @@ around "no-color" in the YAML file).  The C<dark> theme is suitable for
 people using a dark terminal background.  The C<light> theme is suitable for
 a light colored terminal background.  The C<no-color> theme disables the ANSI
 color codes in all output.
+
+In addition to color configuration, the pager and editor commands may be
+specified with this configuration file.
 
 =head1 CLASS METHODS
 
@@ -197,7 +211,7 @@ below.
 This is intended primarily for testing.  It will return a configuration object
 representing a "no color" output and will not read any config files file.
 
-=head1 ATTRIBUTES
+=head1 COLOR ATTRIBUTES
 
 =head2 body-color
 
@@ -241,6 +255,34 @@ This is the escape codes for informational text in the user prompts
 =head2 reset
 
 This is the escape code to reset text attributes.
+
+=head1 OTHER ATTRIBUTES
+
+=head1 editor-command
+
+This is the command used as for editing and creating task notes.  An occurance
+of C<%FILENAME%> is replaced with a temporary file name (representing the note
+to create).
+
+The default value is:
+
+  nano -r 72 -s ispell +3,1 %FILENAME%
+
+This uses the nano editor, with line wrapping at 72 columns.  It uses ispell
+as the spell checker.  It positions the cursor at the 3rd line, first column
+position.
+
+=head1 pager-command
+
+This is used to display all output that may span more than one page.
+
+Any instance of C<%FILENAME%> is replaced by the temporary file to display.
+Any instance of C<%PROMPT%> is replaced by a propt to provide the user to
+scroll to the next page.
+
+The default value is:
+
+  less -RFX -P%PROMPT% -- %FILENAME%
 
 =head1 AUTHOR
 
