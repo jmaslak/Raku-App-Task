@@ -299,7 +299,7 @@ class App::Tasks:ver<0.0.5>:auth<cpan:JMASLAK> {
         if @fn.elems == 1 { self.remove-lock(); return @fn[0]; }
 
         self.remove-lock();
-        return;
+        die("Task not found");
     }
 
     # Tested
@@ -318,7 +318,7 @@ class App::Tasks:ver<0.0.5>:auth<cpan:JMASLAK> {
         }
         if ( $new < 1 ) { $new = 1; }
 
-        my $oldfn = self.get-task-filename($old) or die("Task not found");
+        my $oldfn = self.get-task-filename($old);
 
         my $oldbase = $oldfn.basename;
         my $newbase = S/^ \d+ '-'/-/ given $oldbase;
