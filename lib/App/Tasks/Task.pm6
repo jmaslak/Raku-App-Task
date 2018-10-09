@@ -7,7 +7,7 @@ use v6;
 
 use v6;
 
-class App::Tasks::Task:ver<0.0.5>:auth<cpan:JMASLAK> {
+class App::Tasks::Task:ver<0.0.6>:auth<cpan:JMASLAK> {
     use App::Tasks::TaskBody;
 
     has Int                  $.task-number;
