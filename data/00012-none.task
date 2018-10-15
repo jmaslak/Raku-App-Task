@@ -1,10 +1,7 @@
-Title: [task] BUG: No confirmation on close without note
-Created: 1437711367
---- 1437711367
-If you close a task (task close x), and say "Y" to enter a note, but 
-then don't add anything in the note, it will close the task without 
-confirmation.
---- 1437711435
-This may be a bit trickier than I frist thought, since the "Save this 
-task" confirmation is in the addnote() routine.  It probably should be 
-broken out to it's own routine.
+Title: [task] feature: Consider allowing view of multiple tasks
+Created: 1437758237
+--- 1437758237
+"task view 1 2 3" should work.
+
+Note that 1, 2, and 3 might be short, long, etc.  So paging needs to be 
+paid attention to.

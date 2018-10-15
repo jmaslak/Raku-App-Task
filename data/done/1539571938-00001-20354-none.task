@@ -1,0 +1,9 @@
+Title: [task] feature: Use dialog for menus
+Created: 1437506013
+--- 1437506013
+This may not be a great idea - haven't investigated yet.
+--- 1437588217
+The primary use case for this will be to have a task selection window 
+dialog.
+--- 1539571938
+This just doesn't feel like the right call.
