@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Add a blank line in between notes when displaying a task that has
+      more than one note.
     - Improve error diagnostics on task show <invalid-number>
 
 0.0.6  2018-10-08T21:43:00-06:00

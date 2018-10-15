@@ -10,14 +10,14 @@ use v6;
 class App::Tasks::Task:ver<0.0.6>:auth<cpan:JMASLAK> {
     use App::Tasks::TaskBody;
 
-    has Int                  $.task-number;
-    has IO::Path             $.data-dir;
-    has IO::Path             $.file;
-    has Str                  $.title;
-    has DateTime             $.created;
-    has Date                 $.expires;
-    has Date                 $.not-before;  # Hide before this date
-    has App::Tasks::TaskBody @.body;
+    has Int      $.task-number;
+    has IO::Path $.data-dir;
+    has IO::Path $.file;
+    has Str      $.title;
+    has DateTime $.created;
+    has Date     $.expires;
+    has Date     $.not-before;  # Hide before this date
+    has Array    $.body = Array[App::Tasks::TaskBody].new;
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
@@ -125,7 +125,7 @@ class App::Tasks::Task:ver<0.0.6>:auth<cpan:JMASLAK> {
         my $note-text = S/\n $// given $text;
 
         my $note = App::Tasks::TaskBody.new(:date(DateTime.now), :text($note-text));
-        @!body.push: $note;
+        $!body.push: $note;
     }
 
     # Update title

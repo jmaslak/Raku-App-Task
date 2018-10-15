@@ -383,9 +383,8 @@ class App::Tasks:ver<0.0.6>:auth<cpan:JMASLAK> {
 
         $out ~= "\n";
 
-        for |$task.body -> $body {
-            $out ~= self.sprint-body($body);
-            $out ~= "\n";
+        if $task.body.elems {
+            $out ~= $task.body.map( { self.sprint-body($^a) } ).join("\n\n") ~ "\n";
         }
 
         self.remove-lock;
