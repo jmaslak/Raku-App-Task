@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Improve error diagnostics on task show <invalid-number>
 
 0.0.6  2018-10-08T21:43:00-06:00
     - [BUGFIX] get-task-filename() should never return an empty result.

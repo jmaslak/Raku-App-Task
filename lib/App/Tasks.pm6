@@ -362,7 +362,14 @@ class App::Tasks:ver<0.0.6>:auth<cpan:JMASLAK> {
     }
 
     method task-show(Int $tasknum where * ~~ ^100_000) {
-        self.add-lock();
+        self.add-lock;
+
+        my @tasks = self.read-tasks();
+        if ! @tasks.first( { $^a.task-number == $tasknum } ).defined {
+            $*ERR.say("Could not locate task number $tasknum");
+            self.remove-lock;
+            return;
+        }
 
         my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
 
@@ -381,7 +388,7 @@ class App::Tasks:ver<0.0.6>:auth<cpan:JMASLAK> {
             $out ~= "\n";
         }
 
-        self.remove-lock();
+        self.remove-lock;
 
         self.display-with-pager( "Task $tasknum", $out );
     }
