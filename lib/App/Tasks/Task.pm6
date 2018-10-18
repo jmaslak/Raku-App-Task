@@ -18,6 +18,8 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
     has Date     $.expires;
     has Date     $.not-before;  # Hide before this date
     has Array    $.body = Array[App::Tasks::TaskBody].new;
+    has Int      $.task-id = new-task-id;
+    has Int      $.version = 2;
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
@@ -29,6 +31,7 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
         my DateTime $created;
         my Date     $expires;
         my Date     $not-before;
+        my Int      $task-id;
 
         # Headers
         while (@lines) {
@@ -45,16 +48,26 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
             my $value = $1.Str;
 
             given $field {
-                when 'title'      { $title   = $value }
-                when 'created'    { $created = DateTime.new( $value.Int ) }
-                when 'expires'    { $expires = Date.new($value) }
+                when 'title'      { $title      = $value }
+                when 'created'    { $created    = DateTime.new( $value.Int ) }
+                when 'expires'    { $expires    = Date.new($value) }
                 when 'not-before' { $not-before = Date.new($value) }
+                when 'task-id'    { $task-id    = $value.Int }
                 default           { die("Unknown header: $field") }
             }
         }
 
+        # Required fields
         if ! $title.defined   { die("Title field not found") }
         if ! $created.defined { die("Created field not found") }
+
+        my $version = 2;
+
+        # Defaults
+        if ! $task-id {
+            $task-id = new-task-id;
+            $version = 1; # We are dealing with a VERSION 1 file.
+        }
 
         # Notes
         my @body;
@@ -76,7 +89,7 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
         }
 
         # Create the object
-        return self.new(
+        my $obj = self.new(
             :task-number($task-number),
             :data-dir($data-dir),
             :file($file),
@@ -84,8 +97,15 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
             :created($created),
             :expires($expires),
             :not-before($not-before),
+            :task-id($task-id),
             :body(@body),
         );
+
+        if $version < 2 {
+            $obj.to-file;  # This will update the version on disk.
+        }
+
+        return $obj;
     }
 
     # Write to a file
@@ -106,6 +126,7 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
         # Header, mandatory
         $fh.say: "Title: ",   self.title;
         $fh.say: "Created: ", self.created.posix;
+        $fh.say: "Task-Id: ", self.task-id;
 
         # Headers, optional
         $fh.say: "Expires: ",    self.expires    if self.expires.defined;
@@ -153,6 +174,19 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
             when 0  { return }
             default { die("More than one name matches\n") }
         }
+    }
+
+    # Method to create a message-id
+    # This will be unique-enough for our purposes, but we should 
+    our sub new-task-id(-->Int:D) {
+        my $date = DateTime.now;
+        my $posix = $date.posix;
+        my $fracs = $date.second - $date.whole-second;
+        my $roll  = (^4_000_000_000).roll;
+
+        my Int $task-id = Int(($posix + $fracs) * 1_000) * 4_000_000_000 + $roll;
+
+        return $task-id;
     }
 }
 

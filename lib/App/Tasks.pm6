@@ -47,24 +47,25 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
         title => {
             order        => 1,
             display      => 'Title',
-            type         => 'string',
         },
         created => {
             order        => 2,
             display      => 'Created',
-            type         => 'datetime',
         },
         not-before => {
             order        => 3,
             display      => 'Not-Before',
-            type         => 'day',
             alert-before => True,
         },
         expires => {
             order        => 4,
             display      => 'Expires',
-            type         => 'day',
             alert-expire => True,
+        },
+        task-id => {
+            order        => 5,
+            display      => 'Task-ID',
+            hex          => True,
         },
     );
 
@@ -378,6 +379,7 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
         # Headers
         $out ~= self.sprint-header-line: 'title', $task.title;
         $out ~= self.sprint-header-line: 'created', $task.created;
+        $out ~= self.sprint-header-line: 'task-id', $task.task-id;
         $out ~= self.sprint-header-line: 'not-before', $task.not-before, :alert-in-future, :alert-in-past(False) if $task.not-before.defined;
         $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-future(False), :alert-in-past if $task.expires.defined;
 
@@ -452,6 +454,14 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
 
     multi method sprint-header-line(Str:D $header, DateTime:D $value) {
         return self.sprint-header-line: $header, localtime($value.posix, :scalar);
+    }
+
+    multi method sprint-header-line(Str:D $header, Int:D $value) {
+        if %H_INFO{$header}<hex> {
+            return self.sprint-header-line: $header, $value.fmt("%x");
+        } else {
+            return self.sprint-header-line: $header, $value.Str;
+        }
     }
 
     method sprint-body(App::Tasks::TaskBody $body) {

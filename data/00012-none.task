@@ -1,7 +1,9 @@
-Title: [task] feature: Consider allowing view of multiple tasks
-Created: 1437758237
---- 1437758237
-"task view 1 2 3" should work.
-
-Note that 1, 2, and 3 might be short, long, etc.  So paging needs to be 
-paid attention to.
+Title: [task] feature: Use vi (and set up right extensions and such)
+Created: 1439412995
+Task-Id: 6159523072689145194167
+--- 1439412995
+We should be able to use VI.  It would be helpful if a stable extension 
+was used for this.
+--- 1538950983
+We've made this somewhat configurable by moving editor selection into 
+the config file.

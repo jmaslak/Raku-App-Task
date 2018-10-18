@@ -52,8 +52,10 @@ sub tests {
     my @new  = $tmpdir.add("00001-none.task").lines.sort.list;
     is-deeply @new, @orig, "to-file works properly";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    my @rand = (^1_000).map: { App::Tasks::Task::new-task-id };
+    is @rand.elems, @rand.unique.elems, "No duplications of TaskIDs";
 
+    is $task.LOCKCNT, 0, "Lock count is 0";
     done-testing;
 }
 

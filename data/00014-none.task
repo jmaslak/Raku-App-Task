@@ -1,5 +1,3 @@
-Title: [task] Performance, particularly of monitor command
-Created: 1535339295
---- 1535339295
-We should cache the file reads that monitor does and/or parallelize the 
-reads.
+Title: [task] Add handling of stale tasks
+Created: 1536249836
+Task-Id: 6159523072761989980322
