@@ -10,16 +10,16 @@ use v6;
 class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
     use App::Tasks::TaskBody;
 
-    has Int      $.task-number;
-    has IO::Path $.data-dir;
-    has IO::Path $.file;
-    has Str      $.title;
-    has DateTime $.created;
-    has Date     $.expires;
-    has Date     $.not-before;  # Hide before this date
-    has Array    $.body = Array[App::Tasks::TaskBody].new;
-    has Int      $.task-id = new-task-id;
-    has Int      $.version = 2;
+    has Int:D      $.task-number is required;
+    has IO::Path:D $.data-dir    is required;
+    has IO::Path   $.file;
+    has Str:D      $.title       is required;
+    has DateTime:D $.created     is required;
+    has Date       $.expires;
+    has Date       $.not-before;  # Hide before this date
+    has Array:D    $.body = Array[App::Tasks::TaskBody].new;
+    has Int:D      $.task-id = new-task-id;
+    has Int:D      $.version = 2;
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
