@@ -38,6 +38,8 @@ sub tests {
     is @tasks[0].title, "Subject Line", "Proper subject line";
     is @tasks[0].body.elems, 1, "One note found";
     is @tasks[0].expires.Str, $day, "Expires header correct";
+    is @tasks[0].version, 2, "Version is correct";
+    is @tasks[0].task-id.defined, True, "Task ID is defined";
 
     my $one = App::Tasks::Task.from-file( $tmpdir, 1 );
     is $one.title,               @tasks[0].title,              "field matches: title";
