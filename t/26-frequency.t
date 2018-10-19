@@ -58,9 +58,9 @@ sub tests {
     is @tasks[0].display-frequency, 1_000_000_000_000, "B Display frequency is 1_000_000_000_000";
     is @tasks[0].frequency-display-today, False, "B Display frequency today";
     is @tasks[0].body.elems, 2, "B One note found";
-    my $expected = "Added display frequency of every 1 days";
+    $expected = "Added display frequency of every 1 days";
     is @tasks[0].body[0].text, $expected, "B Note 1 is correct";
-    my $expected = "Updated display frequency from every 1 days to every 1000000000000 days";
+    $expected = "Updated display frequency from every 1 days to every 1000000000000 days";
     is @tasks[0].body[1].text, $expected, "B Note 2 is correct";
 
     is $task.LOCKCNT, 0, "Lock count is 0";
