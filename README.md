@@ -105,8 +105,9 @@ If the `--maturity-date` option is provided, this sets the maturity date for the
     task.pl6 list <max-items>
     task.pl6 --show-immature list
     task.pl6 --show-immature list <max-items>
+    task.pl6 --all list
 
-Display a list of active tasks. Normally, only non-immature tasks are shown. If the `--show-immature` option is provided, immature tasks are also shown.
+Display a list of active tasks. Normally, only non-immature tasks are shown. If the `--show-immature` or the `--all` option is provided, immature tasks are also shown. The `--all` option additional shows all tasks that have a frequency that would normally prevent them from being shown today (see the section on `set-frequency` for more information.
 
 Optionally, an integer specifying the maximum number of items to display can be provided.
 
@@ -121,8 +122,11 @@ Display a task's details. This uses the `less` pager if needed. All notes will b
 
     task.pl6 monitor
     task.pl6 --show-immature monitor
+    task.pl6 --all monitor
 
 Displays an updating list of tasks that auto-refreshes. It displays as many tasks as will fit on the screen.
+
+The `--show-immature` and `--all` options function as they do for `list`.
 
 ### note
 
@@ -179,6 +183,16 @@ This closes any open tasks with an expiration date prior to the current date. It
 This will automatically execute a `#coalesce`. Thus task numbers will change after using this.
 
 You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+
+### set-frequency
+
+    task.pl6 set-frequency <task-number>
+
+This sets the "display frequency" of the task. Tasks with a frequency set will display only on one day out of `N` number of days. The `N` is the frequency value, with higher values representing less frequent display of the task. So, for instance, a frequency of `7` would indicate that the task should only be displayed once per week.
+
+The first day the task will be displayed will be betwen now and `N-1` days from now. It will then display every `N` days.
+
+The idea is that with a large task list with lots of low priority tasks, it low priority tasks can be assigned a frequency that causes the normal `list` to display only a subset of them, so as to not overwhelm.
 
 ### set-maturity
 

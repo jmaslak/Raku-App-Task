@@ -14,6 +14,7 @@ sub MAIN(
     +@args,
     Bool :$expire-today?,
     Bool :$show-immature?,
+    Bool :$all?,
     Str  :$maturity-date? where { !$_.defined or try Date.new($_) }
 ) {
     my $task = App::Tasks.new();
@@ -23,6 +24,7 @@ sub MAIN(
         @args,
         :$expire-today,
         :$show-immature,
+        :$all,
         :maturity-date($md),
     );
 }
@@ -138,9 +140,13 @@ for the task.  See L<#set-maturity> for more information.
   task.pl6 list <max-items>
   task.pl6 --show-immature list
   task.pl6 --show-immature list <max-items>
+  task.pl6 --all list
 
 Display a list of active tasks.  Normally, only non-immature tasks are shown.
-If the C<--show-immature> option is provided, immature tasks are also shown.
+If the C<--show-immature> or the C<--all> option is provided, immature tasks
+are also shown.  The C<--all> option additional shows all tasks that have a
+frequency that would normally prevent them from being shown today (see
+the section on C<set-frequency> for more information.
 
 Optionally, an integer specifying the maximum number of items to display can
 be provided.
@@ -157,9 +163,12 @@ will be displayed with the task.
 
   task.pl6 monitor
   task.pl6 --show-immature monitor
+  task.pl6 --all monitor
 
 Displays an updating list of tasks that auto-refreshes.  It displays as many
 tasks as will fit on the screen.
+
+The C<--show-immature> and C<--all> options function as they do for C<list>.
 
 =head3 note
 
@@ -234,6 +243,23 @@ after using this.
 
 You must have done a L<#list> in the current window before you can make notes,
 in case the task numbers have changed.
+
+=head3 set-frequency
+
+  task.pl6 set-frequency <task-number>
+
+This sets the "display frequency" of the task.  Tasks with a frequency set
+will display only on one day out of C<N> number of days.  The C<N> is the
+frequency value, with higher values representing less frequent display of
+the task.  So, for instance, a frequency of C<7> would indicate that the task
+should only be displayed once per week.
+
+The first day the task will be displayed will be betwen now and C<N-1> days
+from now.  It will then display every C<N> days.
+
+The idea is that with a large task list with lots of low priority tasks, it
+low priority tasks can be assigned a frequency that causes the normal
+C<list> to display only a subset of them, so as to not overwhelm.
 
 =head3 set-maturity
 

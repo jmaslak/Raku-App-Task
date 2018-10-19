@@ -62,8 +62,12 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
             display      => 'Expires',
             alert-expire => True,
         },
-        task-id => {
+        display-frequency => {
             order        => 5,
+            display      => 'Display-Frequency',
+        },
+        task-id => {
+            order        => 6,
             display      => 'Task-ID',
             hex          => True,
         },
@@ -74,10 +78,14 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
     method start(
         @args is copy,
         Bool :$expire-today? = False,
-        Bool :$show-immature? = False,
+        Bool :$show-immature? is copy = False,
+        Bool :$all? = False,
         Date :$maturity-date?,
     ) {
         $*OUT.out-buffer = False;
+
+        # If all is set, it implies show-immature.
+        $show-immature = True if $all;
 
         if ! @args.elems {
 
@@ -94,6 +102,7 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
                 [ 'Set Task Expiration',        'set-expire' ],
                 [ 'Expire Tasks',               'expire' ],
                 [ 'Set Task Maturity Date',     'set-maturity' ],
+                [ 'Set Task Display Frequency', 'set-frequency' ],
                 [ 'Quit to Shell',              'quit' ],
             );
 
@@ -177,13 +186,14 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
                 }
                 self.task-close(|@args);
             }
-            when 'list' { self.task-list(|@args, :$show-immature) }
-            when 'monitor' { self.task-monitor(|@args, :$show-immature) }
+            when 'list' { self.task-list(|@args, :$show-immature, :$all) }
+            when 'monitor' { self.task-monitor(|@args, :$show-immature, :$all) }
             when 'coalesce' { self.task-coalesce(|@args) }
             when 'retitle' { self.task-retitle(|@args) }
             when 'set-expire' { self.task-set-expiration(|@args) }
             when 'expire' { self.expire(|@args) }
             when 'set-maturity' { self.task-set-maturity(|@args) }
+            when 'set-frequency' { self.task-set-frequency(|@args) }
             default {
                 say "WRONG USAGE";
             }
@@ -380,8 +390,9 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
         $out ~= self.sprint-header-line: 'title', $task.title;
         $out ~= self.sprint-header-line: 'created', $task.created;
         $out ~= self.sprint-header-line: 'task-id', $task.task-id;
-        $out ~= self.sprint-header-line: 'not-before', $task.not-before, :alert-in-future, :alert-in-past(False) if $task.not-before.defined;
-        $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-future(False), :alert-in-past if $task.expires.defined;
+        $out ~= self.sprint-header-line: 'not-before', $task.not-before, :alert-in-past(False) if $task.not-before.defined;
+        $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-past if $task.expires.defined;
+        $out ~= self.sprint-header-line: 'display-frequency', $task.display-frequency;
 
         $out ~= "\n";
 
@@ -439,8 +450,7 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
     multi method sprint-header-line(
         Str:D $header,
         Date:D $value,
-        Bool:D :$alert-in-past?,
-        Bool:D :$alert-in-future?
+        Bool:D :$alert-in-past?
     ) {
         my $parsed = self.pretty-day($value);
         if Date.new($value) < Date.new(DateTime.now.local.Date.Str) {
@@ -669,6 +679,41 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
         self.remove-lock;
     }
 
+    # Tested
+    method task-set-frequency(Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 }, Int $frequency? is copy) {
+        self.add-lock();
+
+        if ! self.check-task-log() {
+            self.remove-lock();
+            say "Can't set display frequency - task numbers may have changed since last 'task list'";
+            return;
+        }
+
+        if !$tasknum.defined {
+            my @d = self.get-task-filenames();
+            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
+
+            my $tn = self.no-menu-prompt(
+                "$P1 Please enter task number to modify $P2",
+                @validtasks
+            ) or exit;
+            $tasknum = $tn.Int;
+        }
+
+        while ! $frequency.defined {
+            my $s = self.str-prompt("$P1 Please enter desired days apart for task display $P2");
+            if $s !~~ m/^ <[1..9]> <[0..9]>* $/ {
+                say "Must be an integer ≥ 1\n";
+                next;
+            }
+            $frequency = $s.Int;
+        }
+
+        self.set-frequency($tasknum, $frequency);
+
+        self.remove-lock;
+    }
+
     # Indirectly tested
     method set-not-before(Int $tasknum where * ~~ ^100_000, Date:D $day) {
         self.add-lock;
@@ -684,6 +729,28 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
 
         $task.add-note($note);
         $task.change-not-before($day);
+        $task.to-file;
+
+        self.remove-lock;
+        @!TASKS = Array.new;
+    }
+
+    # Indirectly tested
+    method set-frequency(Int:D $tasknum where * ~~ ^100_000, Int:D $frequency where * ≥ 1) {
+        self.add-lock;
+
+        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+
+        my $note;
+        if $task.display-frequency.defined {
+            $note = "Updated display frequency from every " ~ $task.display-frequency.Str
+                ~ " days to every $frequency days";
+        } else {
+            $note = "Added display frequency of every $frequency days";
+        }
+
+        $task.add-note($note);
+        $task.change-display-frequency($frequency);
         $task.to-file;
 
         self.remove-lock;
@@ -915,21 +982,26 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
     method generate-task-list(
         Int $num? is copy where {!$num.defined or $num > 0},
         Int $wchars?,
-        Bool :$count-immature? = False
+        Bool :$count-immature? is copy = False,
+        Bool :$count-all? = False,
     ) {
         self.add-lock();
+
+        $count-immature = True if $count-all;
 
         # Filter out tasks that we don't want to include because they
         # aren't yet ripe.
         my @tasks = self.read-tasks().grep: {
-            if $count-immature {
+            if $count-all {
                 True;
-            } elsif ! $^task.not-before.defined {
-                True;
-            } elsif $^task.not-before ≤ Date.new(DateTime.now.local.Date.Str) {
-                True;
-            } else {
+            } elsif ! $^task.frequency-display-today {
                 False;
+            } elsif $count-immature {
+                True;  # We don't need to test to see if it is mature.
+            } elsif ! $^task.is-mature {
+                False;
+            } else {
+                True;
             }
         };
 
@@ -948,10 +1020,10 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
             }
 
             my $color = $.config.prompt-bold-color;
-            if $task.not-before.defined {
-                if $task.not-before > Date.new(DateTime.now.local.Date.Str) {
-                    $color = $.config.immature-task-color;
-                }
+            if ! $task.is-mature {
+                $color = $.config.immature-task-color;
+            } elsif ! $task.frequency-display-today {
+                $color = $.config.not-displayed-today-color;
             }
 
             "{$.config.prompt-info-color}{$task.task-number} $color$desc" ~ $.config.reset ~ "\n"
@@ -964,19 +1036,25 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
 
     method task-list(
         Int $num? where { !$num.defined or $num > 0 },
-        Bool :$show-immature? = False
+        Bool :$show-immature? is copy = False,
+        Bool :$all = True,
     ) {
         self.add-lock();
 
         self.update-task-log();    # So we know we've done this.
-        my $out = self.generate-task-list( $num, Int, :count-immature($show-immature) );
+        my $out = self.generate-task-list(
+            $num,
+            Int,
+            :count-immature($show-immature),
+            :count-all($all)
+        );
 
         self.display-with-pager( "Tasklist", $out );
 
         self.remove-lock();
     }
 
-    method task-monitor(Bool :$show-immature? = False) {
+    method task-monitor(Bool :$show-immature? = False, Bool :$all) {
         self.task-monitor-show();
 
         react {
@@ -987,13 +1065,15 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
                 done;
             }
             whenever Supply.interval(1) {
-                self.task-monitor-show(:$show-immature);
+                self.task-monitor-show(:$show-immature, $all);
             }
         }
     }
 
-    method task-monitor-show(Bool :$show-immature? = False) {
+    method task-monitor-show(Bool :$show-immature? is copy = False, Bool :$all = False) {
         self.add-lock();
+
+        $show-immature = True if $all;
 
         state $last = 'x';  # Not '' because then we won't try to draw the initial
                             # screen - there will be no "type any character" prompt!
@@ -1007,7 +1087,12 @@ class App::Tasks:ver<0.0.7>:auth<cpan:JMASLAK> {
 
         my $out = localtime(:scalar) ~ ' local / ' ~ gmtime(:scalar) ~ " UTC\n\n";
 
-        $out ~= self.generate-task-list( $rows - 3, $cols - 1, :count-immature($show-immature) );
+        $out ~= self.generate-task-list(
+            $rows - 3,
+            $cols - 1,
+            :count-immature($show-immature),
+            :count-all($all)
+        );
         if $out ne $last {
             $last = $out;
             self.clear;

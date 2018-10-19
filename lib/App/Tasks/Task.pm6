@@ -20,6 +20,7 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
     has Array:D    $.body = Array[App::Tasks::TaskBody].new;
     has Int:D      $.task-id = new-task-id;
     has Int:D      $.version = 2;
+    has Int        $.display-frequency;
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
@@ -32,6 +33,7 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
         my Date     $expires;
         my Date     $not-before;
         my Int      $task-id;
+        my Int      $display-frequency;
 
         # Headers
         while (@lines) {
@@ -48,11 +50,12 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
             my $value = $1.Str;
 
             given $field {
-                when 'title'      { $title      = $value }
-                when 'created'    { $created    = DateTime.new( $value.Int ) }
-                when 'expires'    { $expires    = Date.new($value) }
-                when 'not-before' { $not-before = Date.new($value) }
-                when 'task-id'    { $task-id    = $value.Int }
+                when 'title'             { $title             = $value }
+                when 'created'           { $created           = DateTime.new($value.Int) }
+                when 'expires'           { $expires           = Date.new($value) }
+                when 'not-before'        { $not-before        = Date.new($value) }
+                when 'task-id'           { $task-id           = $value.Int }
+                when 'display-frequency' { $display-frequency = $value.Int }
                 default           { die("Unknown header: $field") }
             }
         }
@@ -88,7 +91,6 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
             );
         }
 
-        # Create the object
         my $obj = self.new(
             :task-number($task-number),
             :data-dir($data-dir),
@@ -97,6 +99,7 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
             :created($created),
             :expires($expires),
             :not-before($not-before),
+            :display-frequency($display-frequency),
             :task-id($task-id),
             :body(@body),
         );
@@ -129,8 +132,9 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
         $fh.say: "Task-Id: ", self.task-id;
 
         # Headers, optional
-        $fh.say: "Expires: ",    self.expires    if self.expires.defined;
-        $fh.say: "Not-Before: ", self.not-before if self.not-before.defined;
+        $fh.say: "Expires: ",           self.expires           if self.expires.defined;
+        $fh.say: "Not-Before: ",        self.not-before        if self.not-before.defined;
+        $fh.say: "Display-Frequency: ", self.display-frequency if self.display-frequency.defined;
 
         # Body
         for self.body -> $body {
@@ -162,6 +166,35 @@ class App::Tasks::Task:ver<0.0.7>:auth<cpan:JMASLAK> {
     # Update Not-Before
     method change-not-before(Date $day) {
         $!not-before = $day;
+    }
+
+    # Update Display-Frequency
+    method change-display-frequency(Int:D $frequency where * ≥ 0) {
+        $!display-frequency = $frequency;
+    }
+
+    # Is task mature?
+    method is-mature(-->Bool:D) {
+        if ! self.not-before.defined { return True }
+
+        if self.not-before ≤ Date.new(DateTime.now.local.Date.Str) {
+            return True;
+        } else {
+            return False;
+        }
+    }
+
+    # Check Frequency
+    method frequency-display-today(-->Bool:D) {
+        if ! self.display-frequency.defined { return True }
+        if self.display-frequency ≤ 1       { return True }
+
+        my $daynum = Date.new(DateTime.now.local.Date.Str).daycount;
+        if ( self.task-id + $daynum ) %% self.display-frequency {
+            return True;
+        } else {
+            return False;
+        }
     }
 
     # Get the filename associated with a task number

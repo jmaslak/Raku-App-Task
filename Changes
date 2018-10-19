@@ -1,7 +1,12 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
-    - Add task IDs to task format. These aren't yet used for anything.
+    - Implement "display frequency".  You can set this frequency with a
+      task, representing how often the task will display. For instance, to
+      a task every 3 days, set to "3".  The start day is based on the task-id,
+      so it is essentially random.
+    - Add task IDs to task format. These are just used internally right
+      now.
 
 0.0.7  2018-10-14T21:31:37-06:00
     - Add a blank line in between notes when displaying a task that has

@@ -10,19 +10,20 @@ class App::Tasks::Config:ver<0.0.7>:auth<cpan:JMASLAK> {
     use Terminal::ANSIColor;
     use YAMLish;
 
-    has Str $.body-color              is rw;
-    has Str $.header-alert-color      is rw;
-    has Str $.header-normal-color     is rw;
-    has Str $.header-seperator-color  is rw;
-    has Str $.header-title-color      is rw;
-    has Str $.immature-task-color     is rw;
-    has Str $.prompt-bold-color       is rw;
-    has Str $.prompt-color            is rw;
-    has Str $.prompt-info-color       is rw;
-    has Str $.reset                   is rw;
+    has Str $.body-color                is rw;
+    has Str $.header-alert-color        is rw;
+    has Str $.header-normal-color       is rw;
+    has Str $.header-seperator-color    is rw;
+    has Str $.header-title-color        is rw;
+    has Str $.immature-task-color       is rw;
+    has Str $.not-displayed-today-color is rw;
+    has Str $.prompt-bold-color         is rw;
+    has Str $.prompt-color              is rw;
+    has Str $.prompt-info-color         is rw;
+    has Str $.reset                     is rw;
 
-    has Str $.pager-command           is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
-    has Str $.editor-command          is rw = 'nano -r 72 -s ispell +3,1 %FILENAME%';
+    has Str $.pager-command             is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
+    has Str $.editor-command            is rw = 'nano -r 72 -s ispell +3,1 %FILENAME%';
 
     method read-config(IO::Path:D $config-file? = $*HOME.add('.task.yaml')) {
         my $contents = '';
@@ -60,19 +61,20 @@ class App::Tasks::Config:ver<0.0.7>:auth<cpan:JMASLAK> {
             $obj.set-color-default-dark();
         }
 
-        $obj.body-color             = c($y, 'body-color')             if $y<body-color>:exists;
-        $obj.header-alert-color     = c($y, 'header-alert-color')     if $y<header-alert-color>:exists;
-        $obj.header-normal-color    = c($y, 'header-normal-color')    if $y<header-normal-color>:exists;
-        $obj.header-seperator-color = c($y, 'header-seperator-color') if $y<header-seperator-color>:exists;
-        $obj.header-title-color     = c($y, 'header-title-color')     if $y<header-title-color>:exists;
-        $obj.immature-task-color    = c($y, 'immature-task-color')    if $y<immature-task-color>:exists;
-        $obj.prompt-bold-color      = c($y, 'prompt-bold-color')      if $y<prompt-bold-color>:exists;
-        $obj.prompt-color           = c($y, 'prompt-color')           if $y<prompt-color>:exists;
-        $obj.prompt-info-color      = c($y, 'prompt-info-color')      if $y<prompt-info-color>:exists;
-        $obj.reset                  = c($y, 'reset')                  if $y<reset>:exists;
+        $obj.body-color                = c($y, 'body-color')                if $y<body-color>:exists;
+        $obj.header-alert-color        = c($y, 'header-alert-color')        if $y<header-alert-color>:exists;
+        $obj.header-normal-color       = c($y, 'header-normal-color')       if $y<header-normal-color>:exists;
+        $obj.header-seperator-color    = c($y, 'header-seperator-color')    if $y<header-seperator-color>:exists;
+        $obj.header-title-color        = c($y, 'header-title-color')        if $y<header-title-color>:exists;
+        $obj.immature-task-color       = c($y, 'immature-task-color')       if $y<immature-task-color>:exists;
+        $obj.not-displayed-today-color = c($y, 'not-displayed-today-color') if $y<not-displayed-today-color>:exists;
+        $obj.prompt-bold-color         = c($y, 'prompt-bold-color')         if $y<prompt-bold-color>:exists;
+        $obj.prompt-color              = c($y, 'prompt-color')              if $y<prompt-color>:exists;
+        $obj.prompt-info-color         = c($y, 'prompt-info-color')         if $y<prompt-info-color>:exists;
+        $obj.reset                     = c($y, 'reset')                     if $y<reset>:exists;
 
-        $obj.pager-command          = $y<pager-command>:delete        if $y<pager-command>:exists;
-        $obj.editor-command         = $y<editor-command>:delete       if $y<editor-command>:exists;
+        $obj.pager-command             = $y<pager-command>:delete           if $y<pager-command>:exists;
+        $obj.editor-command            = $y<editor-command>:delete          if $y<editor-command>:exists;
 
         if $y.keys.list.elems > 0 {
             die("Unknown configuration keys: " ~ $y.keys);
@@ -86,42 +88,45 @@ class App::Tasks::Config:ver<0.0.7>:auth<cpan:JMASLAK> {
     }
 
     method set-color-default-dark() {
-        $!body-color             = c('yellow');
-        $!header-alert-color     = c('bold red');
-        $!header-normal-color    = c('bold yellow');
-        $!header-seperator-color = c('red');
-        $!header-title-color     = c('bold green');
-        $!immature-task-color    = c('yellow');
-        $!prompt-bold-color      = c('bold green');
-        $!prompt-color           = c('bold cyan');
-        $!prompt-info-color      = c('cyan');
-        $!reset                  = c('reset');
+        $!body-color                = c('yellow');
+        $!header-alert-color        = c('bold red');
+        $!header-normal-color       = c('bold yellow');
+        $!header-seperator-color    = c('red');
+        $!header-title-color        = c('bold green');
+        $!immature-task-color       = c('yellow');
+        $!not-displayed-today-color = c('yellow');
+        $!prompt-bold-color         = c('bold green');
+        $!prompt-color              = c('bold cyan');
+        $!prompt-info-color         = c('cyan');
+        $!reset                     = c('reset');
     }
 
     method set-color-default-light() {
-        $!body-color             = c('94');
-        $!header-alert-color     = c('red');
-        $!header-seperator-color = c('red');
-        $!header-title-color     = c('28');
-        $!header-normal-color    = c('94');
-        $!immature-task-color    = c('yellow');
-        $!prompt-bold-color      = c('green');
-        $!prompt-color           = c('cyan');
-        $!prompt-info-color      = c('cyan');
-        $!reset                  = c('reset');
+        $!body-color                = c('94');
+        $!header-alert-color        = c('red');
+        $!header-seperator-color    = c('red');
+        $!header-title-color        = c('28');
+        $!header-normal-color       = c('94');
+        $!immature-task-color       = c('yellow');
+        $!not-displayed-today-color = c('yellow');
+        $!prompt-bold-color         = c('green');
+        $!prompt-color              = c('cyan');
+        $!prompt-info-color         = c('cyan');
+        $!reset                     = c('reset');
     }
 
     method set-color-default-no-color() {
-        $!body-color             = '';
-        $!header-alert-color     = '';
-        $!header-title-color     = '';
-        $!header-seperator-color = '';
-        $!header-normal-color    = '';
-        $!immature-task-color    = '';
-        $!prompt-bold-color      = '';
-        $!prompt-color           = '';
-        $!prompt-info-color      = '';
-        $!reset                  = '';
+        $!body-color                = '';
+        $!header-alert-color        = '';
+        $!header-title-color        = '';
+        $!header-seperator-color    = '';
+        $!header-normal-color       = '';
+        $!immature-task-color       = '';
+        $!not-displayed-today-color = '';
+        $!prompt-bold-color         = '';
+        $!prompt-color              = '';
+        $!prompt-info-color         = '';
+        $!reset                     = '';
     }
 
     #
@@ -235,10 +240,16 @@ This is the escape codes for the header title text.
 
 This is the escape codes for the header normal text.
 
-=head2 immamture-task-color
+=head2 immature-task-color
 
 This is the escape codes for immature tasks in the main task list (when
-display is enabled).
+display of either all tasks or immature tasks is enabled).
+
+=head2 not-displayed-today-coloor
+
+This is the escape codes for tasks that have a frequency that would normally
+prevent them from being displayed in the main task list (only applicable when
+display of all tasks is enabled).
 
 =head2 prompt-bold-color
 
