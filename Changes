@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.0.8  2018-10-18T21:20:43-06:00
     - Implement "display frequency".  You can set this frequency with a
       task, representing how often the task will display. For instance, to
       a task every 3 days, set to "3".  The start day is based on the task-id,
