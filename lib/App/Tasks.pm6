@@ -4,7 +4,7 @@
 #
 use v6;
 
-class App::Tasks:ver<0.0.8>:auth<cpan:JMASLAK> {
+class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     use App::Tasks::Config;
     use App::Tasks::Task;
 
