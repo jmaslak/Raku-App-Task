@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [BUGFIX] Tasks with no display frequency now properly display
 
 0.0.8  2018-10-18T21:20:43-06:00
     - Implement "display frequency".  You can set this frequency with a
