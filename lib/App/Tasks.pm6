@@ -8,6 +8,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     use App::Tasks::Config;
     use App::Tasks::Lock;
     use App::Tasks::Task;
+    use App::Tasks::TaskList;
 
     use Digest::SHA1::Native;
     use File::Temp;
@@ -21,13 +22,13 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     my $P1         = '[task]';
     my $P2         = '> ';
 
-    has IO::Path:D         $.data-dir  = gettaskdir();
-    has IO::Path:D         $.lock-file = $!data-dir.add(".taskview.lock");
-    has App::Tasks::Lock:D $!lock      = App::Tasks::Lock.new( :lock-file($!lock-file) );
+    has App::Tasks::TaskList:D $!tasks = App::Tasks::TaskList.new(:data-dir($!data-dir));
 
     has Lock:D $.SEMAPHORE = Lock.new;
     has App::Tasks::Task:D @!TASKS;
-    has App::Tasks::Config:D $.config = App::Tasks::Config.read-config();
+
+    has IO::Path:D           $.data-dir = gettaskdir;
+    has App::Tasks::Config:D $.config = $App::Tasks::Config.read-config(:data-dir($!data-dir));
 
     # Partially implemented - there be dragons here!
     has $.write-output is rw = True;   # Write output to terminal, used for testing only.
@@ -218,7 +219,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Indirectly tested
     method get-task-filenames() {
         self.add-lock;
-        my @out = self.data-dir.dir(test => { m/^ \d+ '-' .* \.task $ / }).sort;
+        my @out = $!tasks.data-dir.dir(test => { m/^ \d+ '-' .* \.task $ / }).sort;
         self.remove-lock;
 
         return @out;
@@ -279,7 +280,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         my $task = App::Tasks::Task.new(
             :task-number($seq),
-            :data-dir(self.data-dir),
+            :data-dir($!tasks.data-dir),
             :title($subject),
             :created(DateTime.now),
         );
@@ -382,7 +383,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             return;
         }
 
-        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
 
         my $out    = '';
 
@@ -522,7 +523,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     method retitle(Int $tasknum where * ~~ ^100_000, Str:D $newtitle) {
         self.add-lock;
 
-        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
         my $note = "Title changed from:\n" ~
                 "  " ~ $task.title ~ "\n" ~
                 "To:\n" ~
@@ -611,7 +612,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     method set-expiration(Int $tasknum where * ~~ ^100_000, Date:D $day) {
         self.add-lock;
 
-        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
 
         my $note;
         if $task.expires.defined {
@@ -718,7 +719,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     method set-not-before(Int $tasknum where * ~~ ^100_000, Date:D $day) {
         self.add-lock;
 
-        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
 
         my $note;
         if $task.not-before.defined {
@@ -739,7 +740,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     method set-frequency(Int:D $tasknum where * ~~ ^100_000, Int:D $frequency where * ≥ 1) {
         self.add-lock;
 
-        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
 
         my $note;
         if $task.display-frequency.defined {
@@ -797,7 +798,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     multi method add-note(Int:D $tasknum where * ~~ ^100_000, Str:D $note) {
         self.add-lock;
 
-        my $task = App::Tasks::Task.from-file(self.data-dir, $tasknum);
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
         self.add-note($task, $note);
 
         self.remove-lock;
@@ -932,7 +933,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         self.validate-done-dir-exists();
 
-        my $newpath = $.data-dir.add("done").add($newfn);
+        my $newpath = $!tasks.data-dir.add("done").add($newfn);
         move $fn, $newpath;
         say "Closed $taskstr";
 
@@ -972,7 +973,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         @tasknums = @tasknums.sort( { $^a <=> $^b } ).list;
 
         @!TASKS = @tasknums.hyper(batch => 8, degree => 16).map: {
-            App::Tasks::Task.from-file(self.data-dir, $^tasknum);
+            App::Tasks::Task.from-file($!tasks.data-dir, $^tasknum);
         };
 
         self.remove-lock;
@@ -1145,7 +1146,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         my $sha = self.get-taskhash();
 
         my @terms;
-        my $status = $.data-dir.add(".taskview.status");
+        my $status = $!tasks.data-dir.add(".taskview.status");
         if $status.f {
             @terms = $status.lines;
         }
@@ -1190,7 +1191,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         my $sha = self.get-taskhash();
 
-        my $status = $.data-dir.add(".taskview.status");
+        my $status = $!tasks.data-dir.add(".taskview.status");
 
         my @terms;
         if $status.f {
@@ -1412,7 +1413,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Indirectly tested
     method add-lock(-->Nil) {
         $.SEMAPHORE.protect: {
-            if $!lock.get-lock {
+            if $!tasks.lock.get-lock {
                 # We obtained the lock
                 @!TASKS = Array.new;
                 self.validate-dir();
@@ -1423,17 +1424,17 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
     # Indirectly tested
     method remove-lock(-->Nil) {
-        $!lock.release-lock;
+        $!tasks.lock.release-lock;
         return;
     }
 
     # For testing purposes
-    method get-lock-count(-->Int:D) { $!lock.get-lock-count; }
+    method get-lock-count(-->Int:D) { $!tasks.lock.get-lock-count; }
 
     # Indirectly tested
     method validate-dir() {
-        if ! $.data-dir.f {
-            $.data-dir.mkdir;
+        if ! $!tasks.data-dir.f {
+            $!tasks.data-dir.mkdir;
         }
 
         return;
@@ -1442,7 +1443,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Indirectly tested
     method validate-done-dir-exists() {
         self.validate-dir();
-        my $done = $.data-dir.add("done");
+        my $done = $!tasks.data-dir.add("done");
         if ! $done.f {
             $done.mkdir;
         }
@@ -1465,7 +1466,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
     sub ttyname(uint32) returns Str is native { * };
 
-    sub gettaskdir(-->IO::Path) {
+    my sub gettaskdir(-->IO::Path) {
         if %*ENV<TASKDIR>:exists { return %*ENV<TASKDIR>.IO }
         if %*ENV<HOME>:exists    { return %*ENV<HOME>.IO.add(".task") }
         return ".task".IO;
