@@ -43,7 +43,7 @@ sub tests {
     my $expected = "Title changed from:\n  Subject Line\nTo:\n  New Subject Line";
     is @tasks[0].body[0].text, $expected, "Note is correct";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     done-testing;
 }

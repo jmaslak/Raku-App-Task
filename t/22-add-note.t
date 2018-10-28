@@ -47,7 +47,7 @@ sub tests {
     is @tasks[0].body[0].text, "A Note.", "Proper body text";
     ok @tasks[0].body[0].date.defined, "Date field defined";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     #
     # Second Note
@@ -64,7 +64,7 @@ sub tests {
     is @tasks[0].body[1].text, "B Note.", "Proper body text";
     ok @tasks[0].body[1].date.defined, "Date field defined";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     done-testing;
 }

@@ -60,7 +60,7 @@ sub tests {
     is @tasks[0].task-number, 1, "Proper number (C1)";
     is @tasks[1].task-number, 2, "Proper Number (C2)";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     done-testing;
 }

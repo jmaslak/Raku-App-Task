@@ -96,7 +96,7 @@ sub tests {
     is @tasks.elems, 1, "C: Proper number of tasks exist";
     is @tasks[0].title, "2 Subject Line", "C: Proper subject line";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     done-testing;
 }

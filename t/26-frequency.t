@@ -63,7 +63,7 @@ sub tests {
     $expected = "Updated display frequency from every 1 days to every 1000000000000 days";
     is @tasks[0].body[1].text, $expected, "B Note 2 is correct";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     done-testing;
 }

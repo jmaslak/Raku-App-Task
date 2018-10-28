@@ -70,7 +70,7 @@ sub tests {
     is $task.yn-prompt(""), True, "Testing invalid followed by valid";
     is $task.yn-prompt(""), False, "Testing terminating false";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     done-testing;
 }

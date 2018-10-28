@@ -6,6 +6,7 @@ use v6;
 
 class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     use App::Tasks::Config;
+    use App::Tasks::Lock;
     use App::Tasks::Task;
 
     use Digest::SHA1::Native;
@@ -20,18 +21,17 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     my $P1         = '[task]';
     my $P2         = '> ';
 
-    has IO::Path $.data-dir = gettaskdir();
+    has IO::Path:D         $.data-dir  = gettaskdir();
+    has IO::Path:D         $.lock-file = $!data-dir.add(".taskview.lock");
+    has App::Tasks::Lock:D $!lock      = App::Tasks::Lock.new( :lock-file($!lock-file) );
 
-    has IO::Handle $!LOCK;
-    has Int:D $.LOCKCNT            = 0;
-    has Lock:D $.SEMAPHORE         = Lock.new;
+    has Lock:D $.SEMAPHORE = Lock.new;
     has App::Tasks::Task:D @!TASKS;
     has App::Tasks::Config:D $.config = App::Tasks::Config.read-config();
 
     # Partially implemented - there be dragons here!
-    has $.write-output is rw = True; # Write output to terminal, used for testing only.
-
-    has $.INFH  is rw = $*IN;   # Input Filehandle
+    has $.write-output is rw = True;   # Write output to terminal, used for testing only.
+    has $.INFH         is rw = $*IN;   # Input Filehandle
 
     # Disable freshness check
     has $!check-freshness = True;
@@ -1410,37 +1410,25 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     }
 
     # Indirectly tested
-    method add-lock() {
-        $.SEMAPHORE.protect( {
-            if $!LOCKCNT++ == 0 {
+    method add-lock(-->Nil) {
+        $.SEMAPHORE.protect: {
+            if $!lock.get-lock {
+                # We obtained the lock
                 @!TASKS = Array.new;
                 self.validate-dir();
-
-                $!LOCK = $.data-dir.add(".taskview.lock").open(:a);
-                $!LOCK.lock;
             }
-
-            if $!LOCKCNT > 80 { die("Lock leak detected!"); }
-        } );
-
+        };
         return;
     }
 
     # Indirectly tested
-    method remove-lock() {
-        $.SEMAPHORE.protect( {
-            $!LOCKCNT--;
-            if $!LOCKCNT < 0 {
-                die("Cannot decrement lock");
-            }
-            if $!LOCKCNT == 0 {
-                $!LOCK.unlock;
-                $!LOCK.close;
-            }
-        } );
-
+    method remove-lock(-->Nil) {
+        $!lock.release-lock;
         return;
     }
+
+    # For testing purposes
+    method get-lock-count(-->Int:D) { $!lock.get-lock-count; }
 
     # Indirectly tested
     method validate-dir() {

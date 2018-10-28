@@ -55,7 +55,7 @@ sub tests {
     is @tasks[0].title, "Second Task", "Proper subject line (3)";
     is @tasks[0].task-number, 2, "Proper number (B1)";
 
-    is $task.LOCKCNT, 0, "Lock count is 0";
+    is $task.get-lock-count, 0, "Lock count is 0";
 
     done-testing;
 }
