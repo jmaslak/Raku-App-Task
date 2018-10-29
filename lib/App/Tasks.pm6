@@ -204,6 +204,8 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Indirectly tested
     method get-next-sequence(-->Int) {
         self.add-lock();
+        LEAVE self.remove-lock;
+
         my @tasks = self.read-tasks();
 
         my Int $seq = 1;
@@ -211,7 +213,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             $seq = @tasks.map({ $^a.task-number }).max + 1;
             if $seq > 99999 { die("Task number would be too large"); }
         }
-        self.remove-lock();
 
         return $seq;
     }
@@ -219,8 +220,9 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Indirectly tested
     method get-task-filenames() {
         self.add-lock;
+        LEAVE self.remove-lock;
+
         my @out = $!tasks.data-dir.dir(test => { m/^ \d+ '-' .* \.task $ / }).sort;
-        self.remove-lock;
 
         return @out;
     }
@@ -228,22 +230,22 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Has test
     method task-new-expire-today(Str $sub?) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my $task = self.task-new($sub);
         self.task-set-expiration($task.Int, DateTime.now.local.Date.Str);
 
-        self.remove-lock;
         return $task;
     }
 
     # Has test
     method task-new-maturity(Str $sub?, Date:D :$maturity-date) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my $task = self.task-new($sub);
         self.task-set-maturity($task.Int, $maturity-date.Str);
 
-        self.remove-lock;
         return $task;
     }
 
@@ -251,6 +253,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Has test
     method task-new(Str $sub?) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my Int $seq = self.get-next-sequence;
 
@@ -273,7 +276,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
             if ! self.confirm-save() {
                 say "Aborting.";
-                self.remove-lock;
                 exit;
             }
         }
@@ -292,34 +294,32 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         $task.to-file;
         @!TASKS.push($task);
 
-        self.remove-lock();
-
         say "Created task $seq";
         return $seq;
     }
 
     # Indirectly tested
     method get-task-filename(Int $taskint where * ~~ ^100_000 --> IO::Path:D) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         my Str $task = sprintf( "%05d", $taskint );
 
         my @d = self.get-task-filenames();
         my @fn = @d.grep: { .basename ~~ m/^ $task '-'/ };
 
-        if @fn.elems > 1  { self.remove-lock(); die "More than one name matches\n"; }
-        if @fn.elems == 1 { self.remove-lock(); return @fn[0]; }
+        if @fn.elems > 1  { die "More than one name matches\n"; }
+        if @fn.elems == 1 { return @fn[0]; }
 
-        self.remove-lock();
         die("Task not found");
     }
 
     # Tested
     method task-move(Int $old where * ~~ ^100_000, Int $new where * ~~ ^100_000) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         if ! self.check-task-log() {
-            self.remove-lock();
             say "Can't move task - task numbers may have changed since last 'task list'";
             return;
         }
@@ -369,17 +369,15 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
 
         move $newfntmp, $newfn;
-
-        self.remove-lock();
     }
 
     method task-show(Int $tasknum where * ~~ ^100_000) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my @tasks = self.read-tasks();
         if ! @tasks.first( { $^a.task-number == $tasknum } ).defined {
             $*ERR.say("Could not locate task number $tasknum");
-            self.remove-lock;
             return;
         }
 
@@ -401,14 +399,13 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             $out ~= $task.body.map( { self.sprint-body($^a) } ).join("\n\n") ~ "\n";
         }
 
-        self.remove-lock;
-
         self.display-with-pager( "Task $tasknum", $out );
     }
 
     # Indirectly tested
     method read-task-body(Hash $task is rw, @lines) {
         self.add-lock();
+        LEAVE self.remove-lock;
 
         for @lines -> $line {
             if $line ~~ m/^ '--- ' (\d+) $/ {
@@ -425,8 +422,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
                 $task<body>[*-1]<body> ~= $line ~ "\n";
             }
         }
-
-        self.remove-lock();
     }
 
     multi method sprint-header-line(Str:D $header, Str:D $value, Bool :$alert?) {
@@ -493,9 +488,9 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Tested
     method task-retitle(Int $tasknum? where { !$tasknum.defined or $tasknum > 0 }, Str $newtitle? is copy) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
-        if ! self.check-task-log() {
-            self.remove-lock();
+        if ! self.check-task-log {
             say "Can't retitle - task numbers may have changed since last 'task list'";
             return;
         }
@@ -514,14 +509,13 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             $newtitle = self.str-prompt("$P1 Please enter the new title $P2");
         }
 
-        self.retitle($tasknum, $newtitle);
-
-        self.remove-lock;
+        return self.retitle($tasknum, $newtitle);
     }
 
     # Indirectly tested
     method retitle(Int $tasknum where * ~~ ^100_000, Str:D $newtitle) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
         my $note = "Title changed from:\n" ~
@@ -533,13 +527,14 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         $task.change-title($newtitle);
         $task.to-file;
 
-        self.remove-lock;
         @!TASKS = Array.new;
+        return;
     }
 
     # Tested
     method expire() {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         my @tasks = self.read-tasks();
         for @tasks -> $task {
@@ -553,24 +548,22 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
         self.coalesce-tasks();
 
-        self.remove-lock;
         @!TASKS = Array.new;
     }
 
     # Tested
     method task-set-expiration(Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 }, Str $day? is copy) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         if $day.defined {
             if $day !~~ m/^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/ {
                 say "Invalid date format - please use YYYY-MM-DD format";
-                self.remove-lock;
                 return;
             }
         }
 
         if ! self.check-task-log() {
-            self.remove-lock();
             say "Can't set expiration - task numbers may have changed since last 'task list'";
             return;
         }
@@ -599,18 +592,16 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         if $expire < $now {
             say "Date cannot be before today";
-            self.remove-lock;
             return;
         }
 
-        self.set-expiration($tasknum, $expire);
-
-        self.remove-lock;
+        return self.set-expiration($tasknum, $expire);
     }
 
     # Indirectly tested
     method set-expiration(Int $tasknum where * ~~ ^100_000, Date:D $day) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
 
@@ -625,24 +616,23 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         $task.change-expiration($day);
         $task.to-file;
 
-        self.remove-lock;
         @!TASKS = Array.new;
+        return;
     }
 
     # Tested
     method task-set-maturity(Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 }, Str $day? is copy) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         if $day.defined {
             if $day !~~ m/^ <[0..9]>**4 '-' <[0..9]><[0..9]> '-' <[0..9]><[0..9]> $/ {
                 say "Invalid date format - please use YYYY-MM-DD format";
-                self.remove-lock;
                 return;
             }
         }
 
         if ! self.check-task-log() {
-            self.remove-lock();
             say "Can't set maturity date - task numbers may have changed since last 'task list'";
             return;
         }
@@ -671,21 +661,18 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         if $not-before <= $now {
             say "Date cannot be before or equal to today";
-            self.remove-lock;
             return;
         }
 
-        self.set-not-before($tasknum, $not-before);
-
-        self.remove-lock;
+        return self.set-not-before($tasknum, $not-before);
     }
 
     # Tested
     method task-set-frequency(Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 }, Int $frequency? is copy) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         if ! self.check-task-log() {
-            self.remove-lock();
             say "Can't set display frequency - task numbers may have changed since last 'task list'";
             return;
         }
@@ -710,14 +697,13 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             $frequency = $s.Int;
         }
 
-        self.set-frequency($tasknum, $frequency);
-
-        self.remove-lock;
+        return self.set-frequency($tasknum, $frequency);
     }
 
     # Indirectly tested
     method set-not-before(Int $tasknum where * ~~ ^100_000, Date:D $day) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
 
@@ -732,13 +718,13 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         $task.change-not-before($day);
         $task.to-file;
 
-        self.remove-lock;
         @!TASKS = Array.new;
     }
 
     # Indirectly tested
     method set-frequency(Int:D $tasknum where * ~~ ^100_000, Int:D $frequency where * ≥ 1) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
 
@@ -754,16 +740,15 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         $task.change-display-frequency($frequency);
         $task.to-file;
 
-        self.remove-lock;
         @!TASKS = Array.new;
     }
 
     # Tested
     method task-add-note(Int $tasknum where * ~~ ^100_000, Str $orignote?) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         if ! self.check-task-log() {
-            self.remove-lock();
             say "Can't add note - task numbers may have changed since last 'task list'";
             return;
         }
@@ -778,39 +763,33 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
 
         if ( !defined($note) ) {
-            self.remove-lock();
             say "Not adding note";
             return;
         }
 
         if ! $orignote.defined and ! self.confirm-save() {
-            self.remove-lock();
             say "Aborting.";
             exit;
         }
 
-        self.add-note($tasknum, $note);
-
-        self.remove-lock;
+        return self.add-note($tasknum, $note);
     }
 
     # Indirectly tested
     multi method add-note(Int:D $tasknum where * ~~ ^100_000, Str:D $note) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
-        self.add-note($task, $note);
-
-        self.remove-lock;
+        return self.add-note($task, $note);
     }
 
     multi method add-note(App::Tasks::Task:D $task, Str:D $note) {
         self.add-lock;
+        LEAVE self.remove-lock;
 
         $task.add-note($note);
         $task.to-file;
-
-        self.remove-lock();
 
         say "Updated task " ~ $task.task-number;
     }
@@ -913,10 +892,10 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         Bool  :$interactive? = True
         --> Nil
     ) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         if $interactive and ! self.check-task-log() {
-            self.remove-lock();
             say "Can't close task - task numbers may have changed since last 'task list'";
             return;
         }
@@ -941,8 +920,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         if $coalesce {
             self.coalesce-tasks();
         }
-
-        self.remove-lock();
     }
 
     method display-with-pager($description, $contents) {
@@ -963,10 +940,9 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     # Tested
     method read-tasks() {
         self.add-lock;
-        if @!TASKS.elems {
-            self.remove-lock;
-            return @!TASKS;
-        };
+        LEAVE self.remove-lock;
+
+        return @!TASKS if @!TASKS.elems;
 
         my (@d)        = self.get-task-filenames();
         my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
@@ -976,7 +952,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             App::Tasks::Task.from-file($!tasks.data-dir, $^tasknum);
         };
 
-        self.remove-lock;
         return @!TASKS;
     }
 
@@ -986,7 +961,8 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         Bool :$count-immature? is copy = False,
         Bool :$count-all? = False,
     ) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         $count-immature = True if $count-all;
 
@@ -1030,8 +1006,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             "{$.config.prompt-info-color}{$task.task-number} $color$desc" ~ $.config.reset ~ "\n"
         };
 
-        self.remove-lock();
-
         return @out.join();
     }
 
@@ -1040,7 +1014,8 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         Bool :$show-immature? is copy = False,
         Bool :$all = True,
     ) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         self.update-task-log();    # So we know we've done this.
         my $out = self.generate-task-list(
@@ -1050,9 +1025,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             :count-all($all)
         );
 
-        self.display-with-pager( "Tasklist", $out );
-
-        self.remove-lock();
+        return self.display-with-pager( "Tasklist", $out );
     }
 
     method task-monitor(Bool :$show-immature? = False, Bool :$all) {
@@ -1072,7 +1045,8 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     }
 
     method task-monitor-show(Bool :$show-immature? is copy = False, Bool :$all = False) {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         $show-immature = True if $all;
 
@@ -1101,22 +1075,20 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             print $.config.reset;
             print "     ...Type any character to exit...  ";
         }
-
-        self.remove-lock();
     }
 
     method task-coalesce() {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         self.coalesce-tasks();
-
-        self.remove-lock();
 
         say "Coalesced tasks";
     }
 
     method coalesce-tasks() {
-        self.add-lock();
+        self.add-lock;
+        LEAVE self.remove-lock;
 
         my @nums = self.get-task-filenames().map: { S/'-' .* .* '.task' $// given .basename };
 
@@ -1136,12 +1108,11 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
                 $i++;
             }
         }
-
-        self.remove-lock();
     }
 
     method update-task-log() {
         self.add-lock();
+        LEAVE: self.remove-lock;
 
         my $sha = self.get-taskhash();
 
@@ -1161,7 +1132,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         if $oldhash eq $sha {
             # No need to update...
             if @terms.grep( { $_ eq $tty } ) {
-                self.remove-lock();
                 return;
             }
         } else {
@@ -1175,19 +1145,18 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
         $fh.say: $tty;
         $fh.close;
-
-        self.remove-lock();
     }
 
     # Returns true if the task log is okay for this process.
     method check-task-log() {
+        self.add-lock;
+        LEAVE self.remove-lock;
+
         # Not a TTY?  Don't worry about this.
         if ! self.isatty() { return 1; }
 
         # Skip freshness check?
         if ! $!check-freshness { return 1; }
-
-        self.add-lock();
 
         my $sha = self.get-taskhash();
 
@@ -1204,16 +1173,13 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
 
         # If hashes differ, it's not cool.
-        if ( $oldhash ne $sha ) { self.remove-lock(); return; }
+        if ( $oldhash ne $sha ) { return; }
 
         # If terminal in list, it's cool.
         my $tty = self.get-ttyname();
         if @terms.grep( { $^a eq $tty } ) {
-            self.remove-lock();
             return 1;
         }
-
-        self.remove-lock();
 
         # Not in list.
         return;
@@ -1221,9 +1187,9 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
     method get-taskhash() {
         self.add-lock();
-        my $tl = self.generate-task-list( Int, Int );
-        self.remove-lock();
+        LEAVE self.remove-lock;
 
+        my $tl = self.generate-task-list( Int, Int );
         return sha1-hex($tl);
     }
 
