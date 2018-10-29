@@ -1149,14 +1149,14 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
     # Returns true if the task log is okay for this process.
     method check-task-log() {
-        self.add-lock;
-        LEAVE self.remove-lock;
-
         # Not a TTY?  Don't worry about this.
         if ! self.isatty() { return 1; }
 
         # Skip freshness check?
         if ! $!check-freshness { return 1; }
+
+        my $a = self.add-lock || True;
+        LEAVE self.remove-lock with $a;
 
         my $sha = self.get-taskhash();
 
