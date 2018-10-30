@@ -119,7 +119,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
             }
         }
 
-        my @validtasks = self.get-task-filenames().map( { Int( S/ ^ .* ( <[0..9]>+ ) \- .* $/$0/ ); } );
+        my @validtasks = $!tasks.get-task-filenames().map( { Int( S/ ^ .* ( <[0..9]>+ ) \- .* $/$0/ ); } );
 
         my $cmd = @args.shift.fc;
         given $cmd {
@@ -216,16 +216,6 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         return $seq;
     }
 
-    # Indirectly tested
-    method get-task-filenames() {
-        self.add-lock;
-        LEAVE self.remove-lock;
-
-        my @out = $!tasks.data-dir.dir(test => { m/^ \d+ '-' .* \.task $ / }).sort;
-
-        return @out;
-    }
-
     # Has test
     method task-new-expire-today(Str $sub?) {
         self.add-lock;
@@ -304,7 +294,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         my Str $task = sprintf( "%05d", $taskint );
 
-        my @d = self.get-task-filenames();
+        my @d = $!tasks.get-task-filenames();
         my @fn = @d.grep: { .basename ~~ m/^ $task '-'/ };
 
         if @fn.elems > 1  { die "More than one name matches\n"; }
@@ -339,7 +329,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         move $oldfn, $newfntmp;
 
-        my @d = self.get-task-filenames();
+        my @d = $!tasks.get-task-filenames();
 
         if ( $new < $old ) { @d = reverse @d; }
         for @d -> $f {
@@ -495,7 +485,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
 
         if !$tasknum.defined {
-            my @d = self.get-task-filenames();
+            my @d = $!tasks.get-task-filenames();
             my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
             $tasknum = self.no-menu-prompt(
@@ -568,7 +558,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
 
         if !$tasknum.defined {
-            my @d = self.get-task-filenames();
+            my @d = $!tasks.get-task-filenames();
             my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
             my $tn = self.no-menu-prompt(
@@ -637,7 +627,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
 
         if !$tasknum.defined {
-            my @d = self.get-task-filenames();
+            my @d = $!tasks.get-task-filenames();
             my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
             my $tn = self.no-menu-prompt(
@@ -677,7 +667,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         }
 
         if !$tasknum.defined {
-            my @d = self.get-task-filenames();
+            my @d = $!tasks.get-task-filenames();
             my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
 
             my $tn = self.no-menu-prompt(
@@ -943,14 +933,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
 
         return @!TASKS if @!TASKS.elems;
 
-        my (@d)        = self.get-task-filenames();
-        my (@tasknums) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
-        @tasknums = @tasknums.sort( { $^a <=> $^b } ).list;
-
-        @!TASKS = @tasknums.hyper(batch => 8, degree => 16).map: {
-            App::Tasks::Task.from-file($!tasks.data-dir, $^tasknum);
-        };
-
+        @!TASKS = $!tasks.read-tasks;
         return @!TASKS;
     }
 
@@ -1089,7 +1072,7 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
         self.add-lock;
         LEAVE self.remove-lock;
 
-        my @nums = self.get-task-filenames().map: { S/'-' .* .* '.task' $// given .basename };
+        my @nums = $!tasks.get-task-filenames().map: { S/'-' .* .* '.task' $// given .basename };
 
         my $i = 1;
         for @nums.sort( {$^a <=> $^b} ) -> $num {

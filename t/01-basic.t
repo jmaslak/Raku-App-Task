@@ -29,7 +29,7 @@ sub tests {
     ok $task.data-dir.d, "Data directory exists";
 
     is $task.get-lock-count, 0, "Lock count is 0";
-    is $task.get-task-filenames.elems, 0, "Proper number of tasks";
+    is $task.read-tasks.elems, 0, "Proper number of tasks";
     is $task.get-lock-count, 0, "Lock count is 0";
     is $task.get-next-sequence, 1, "Proper next sequence";
 
