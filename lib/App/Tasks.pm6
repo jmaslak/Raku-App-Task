@@ -1,8 +1,8 @@
 #
-# Copyright (C) 2015-2018 Joelle Maslak
+# Copyright © 2015-2018 Joelle Maslak
 # All Rights Reserved
 #
-use v6;
+use v6.c;
 
 class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     use App::Tasks::Config;
@@ -22,13 +22,12 @@ class App::Tasks:ver<0.0.9>:auth<cpan:JMASLAK> {
     my $P1         = '[task]';
     my $P2         = '> ';
 
-    has App::Tasks::TaskList:D $!tasks = App::Tasks::TaskList.new(:data-dir($!data-dir));
-
     has Lock:D $.SEMAPHORE = Lock.new;
     has App::Tasks::Task:D @!TASKS;
 
-    has IO::Path:D           $.data-dir = gettaskdir;
-    has App::Tasks::Config:D $.config = $App::Tasks::Config.read-config(:data-dir($!data-dir));
+    has IO::Path:D             $.data-dir = gettaskdir;
+    has App::Tasks::Config:D   $.config   = App::Tasks::Config.read-config(:data-dir($!data-dir));
+    has App::Tasks::TaskList:D $!tasks    = App::Tasks::TaskList.new(:data-dir($!data-dir));
 
     # Partially implemented - there be dragons here!
     has $.write-output is rw = True;   # Write output to terminal, used for testing only.
