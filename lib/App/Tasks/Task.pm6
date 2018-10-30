@@ -1,11 +1,9 @@
-use v6;
+use v6.c;
 
 #
-# Copyright (C) 2018 Joelle Maslak
+# Copyright © 2018 Joelle Maslak
 # All Rights Reserved - See License
 #
-
-use v6;
 
 class App::Tasks::Task:ver<0.0.9>:auth<cpan:JMASLAK> {
     use App::Tasks::TaskBody;

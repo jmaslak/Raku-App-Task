@@ -1,11 +1,9 @@
-use v6;
+use v6.c;
 
 #
-# Copyright (C) 2018 Joelle Maslak
+# Copyright © 2018 Joelle Maslak
 # All Rights Reserved - See License
 #
-
-use v6;
 
 class App::Tasks::TaskBody:ver<0.0.9>:auth<cpan:JMASLAK> {
     has DateTime $.date;

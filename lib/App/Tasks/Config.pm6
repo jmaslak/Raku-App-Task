@@ -1,7 +1,7 @@
-use v6;
+use v6.c;
 
 #
-# Copyright (C) 2018 Joelle Maslak
+# Copyright © 2018 Joelle Maslak
 # All Rights Reserved - See License
 #
 

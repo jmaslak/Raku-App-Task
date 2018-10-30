@@ -1,4 +1,4 @@
-use v6;
+use v6.c;
 
 #
 # Copyright © 2018 Joelle Maslak
