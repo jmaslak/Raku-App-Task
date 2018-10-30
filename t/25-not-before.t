@@ -57,7 +57,7 @@ sub tests {
     is @tasks[0].not-before.Str, Date.new($day).succ.Str, "Not-before header correct";
     is @tasks[0].body.elems, 2, "Two notes found";
 
-    $expected = "Updated not-before date from $day to " ~ $day.succ;
+    $expected = "Updated not-before date from $day to " ~ Date.new($day).succ.Str;
     is @tasks[0].body[1].text, $expected, "Note is correct";
 
     # Do it with the --maturity-date option
