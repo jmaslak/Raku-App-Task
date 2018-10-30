@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.0.10  2018-10-29T21:14:58-06:00
     - [BUGFIX] Tests did not pass near end of month
     - [BUGFIX] 6.d compatibility fixes
 

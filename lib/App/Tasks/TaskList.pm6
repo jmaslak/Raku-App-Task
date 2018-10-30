@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-unit class App::Tasks::TaskList:ver<0.0.9>:auth<cpan:JMASLAK>;
+unit class App::Tasks::TaskList:ver<0.0.10>:auth<cpan:JMASLAK>;
 
 use App::Tasks::Lock;
 use App::Tasks::Task;

@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Task:ver<0.0.9>:auth<cpan:JMASLAK> {
+class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
     use App::Tasks::TaskBody;
 
     has Int:D      $.task-number is required;
