@@ -1,7 +1,23 @@
-Title: Add lots more input validation
-Created: 1437537099
-Task-Id: 6159523072675979259532
-Tags: feature
---- 1437537099
-In particular, make sure to validate that the numeric task arguments 
-actually make sense (numbers, no decimal, positive, etc).
+Title: Allow for internationalization/localization
+Created: 1437578505
+Task-Id: 6159523072713919314450
+Tags: refactor
+--- 1538856865
+The App::Tasks::Config object should facilitate this.
+
+We should have a language attribute in the config file.  This should use 
+a combination of built-in languages and also languages referenced by 
+name from the YAML file.
+
+I.E.:
+
+theme: light
+language: en-US
+
+or
+
+theme: light
+language: en-UK
+languages:
+ en-uk:
+  ... Configuration here ...

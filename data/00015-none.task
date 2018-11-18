@@ -1,12 +1,8 @@
-Title: Editor & pager command don't support quotes
-Created: 1538951069
-Task-Id: 6159523072601003721712
-Tags: bug
---- 1538951069
-An editor or pager command that has double-quoted or single-quoted 
-strings isn't properly parsed - any spaces inside are treated as if they 
-seperate parameters for the shell callout, when the spaces should 
-instead be treated as part of the command.  We'll need to think through 
-the best approach for this.
---- 1542511096
-Added tag bug
+Title: Comments for adding display frequency should use "day" when set to value of 1
+Created: 1539918038
+Task-Id: 6159672152472176126748
+Tags: feature
+--- 1539918038
+Example bad comment:
+
+Updated display frequency from every 1 days to every 100 days

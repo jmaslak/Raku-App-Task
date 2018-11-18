@@ -1,7 +1,4 @@
-Title: Performance, particularly of monitor command
-Created: 1535339295
-Task-Id: 6159523072744494523159
+Title: "task note" interactive should not ask for new "task list"
+Created: 1536876378
+Task-Id: 6159523072776038105915
 Tags: feature
---- 1535339295
-We should cache the file reads that monitor does and/or parallelize the 
-reads.

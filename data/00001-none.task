@@ -1,10 +1,4 @@
-Title: Implement tags
-Created: 1437509650
-Task-Id: 6159523072498630682359
+Title: Don't exit when run interactively after one command
+Created: 1437509667
+Task-Id: 6159523072535192340592
 Tags: feature
---- 1542511432
-This is mostly implemented now.
-
-There is just one missing feature: the ability to exclude tasks from 
-display by default (without the --tags and/or --all commands), using the 
-config file.

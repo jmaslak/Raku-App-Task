@@ -1,8 +1,0 @@
-Title: Comments for adding display frequency should use "day" when set to value of 1
-Created: 1539918038
-Task-Id: 6159672152472176126748
-Tags: feature
---- 1539918038
-Example bad comment:
-
-Updated display frequency from every 1 days to every 100 days

@@ -158,6 +158,11 @@ the section on C<set-frequency> for more information.
 If the C<--tag> option is provided, this lists only tasks with a matching tag.
 See L<#add-tag> for more information.
 
+Normally, tasks that include any tag that is listed in the C<ignore-tags>
+section of the config file (if it exists) are not displayed.  However, they
+will be displayed if C<--all> is specified or if the C<--tag> option includes
+one of the tags associated with the task.
+
 Optionally, an integer specifying the maximum number of items to display can
 be provided.
 

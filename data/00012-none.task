@@ -1,10 +1,7 @@
-Title: Use vi (and set up right extensions and such)
-Created: 1439412995
-Task-Id: 6159523072689145194167
+Title: Performance, particularly of monitor command
+Created: 1535339295
+Task-Id: 6159523072744494523159
 Tags: feature
---- 1439412995
-We should be able to use VI.  It would be helpful if a stable extension 
-was used for this.
---- 1538950983
-We've made this somewhat configurable by moving editor selection into 
-the config file.
+--- 1535339295
+We should cache the file reads that monitor does and/or parallelize the 
+reads.

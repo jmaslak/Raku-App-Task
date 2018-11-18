@@ -999,10 +999,16 @@ class App::Tasks:ver<0.0.11>:auth<cpan:JMASLAK> {
         # Filter out tasks that we don't want to include because they
         # aren't yet ripe.
         my @tasks = self.read-tasks().grep: {
+            # We need to find out if we need to ignore anything
+            my $ignored-tags = $^task.tags ∩ $.config.ignore-tags;
+
             if $tag.defined && ( $^task.tags ∌ $tag ) {
                 False;
             } elsif $count-all {
                 True;
+            } elsif (!$tag.defined) && ($ignored-tags.elems) {
+                False;  # We don't show unless --all or a tag is specified when
+                        # the tags are in the ignored-tags list.
             } elsif ! $^task.frequency-display-today {
                 False;
             } elsif $count-immature {

@@ -1,4 +1,10 @@
-Title: Don't exit when run interactively after one command
-Created: 1437509667
-Task-Id: 6159523072535192340592
+Title: Don't colorize non-terminals
+Created: 1437511791
+Task-Id: 6159523072576011483586
 Tags: feature
+--- 1437511791
+When piping the output (Ex: task list | grep 'foo'), don't colorize the output
+inappropriately.
+--- 1437511840
+This might actually not be important.  Looks like modern Linux grep can deal
+with colorized output.

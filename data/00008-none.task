@@ -1,6 +1,8 @@
-Title: View completed task details
-Created: 1437588161
-Task-Id: 6159523072529698440852
-Tags: feature
---- 1437588161
-Need to be able to pull up a completed task and view it.
+Title: Need to validate cmd line params
+Created: 1437630110
+Task-Id: 6159523072558894100591
+Tags: bug
+--- 1437630110
+We should fail nicer on bogus cmd line arguments.
+--- 1542511112
+Added tag bug
