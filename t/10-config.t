@@ -66,6 +66,7 @@ subtest 'none', {
 
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     is $conf.body-color, color('reset yellow'), "Body color is proper";
+    is $conf.ignore-tags.elems, 0, "No ignore tags present";
 
     done-testing;
 }
@@ -80,6 +81,23 @@ subtest 'editor-pager', {
 
     is $conf.editor-command, 'foo %FILENAME%', 'pager command';
     is $conf.pager-command, 'bar %PROMPT% %FILENAME%', 'prompt command';
+}
+
+subtest 'ignore-tags', {
+    my ($fn, $fh) = tempfile;
+    $fh.say: "ignore-tags:";
+    $fh.say: " - abc";
+    $fh.say: " - def";
+    $fh.close;
+
+    my $conf = App::Tasks::Config.read-config($fn.IO);
+
+    is $conf.WHAT, App::Tasks::Config, "Initialized class";
+
+    my @expected = ('abc', 'def');
+    is $conf.ignore-tags.keys.sort.list, @expected.sort.list, "ignore tags as expected";
+
+    done-testing;
 }
 
 done-testing;

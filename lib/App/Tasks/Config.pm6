@@ -10,21 +10,22 @@ class App::Tasks::Config:ver<0.0.11>:auth<cpan:JMASLAK> {
     use Terminal::ANSIColor;
     use YAMLish;
 
-    has Str $.body-color                is rw;
-    has Str $.header-alert-color        is rw;
-    has Str $.header-normal-color       is rw;
-    has Str $.header-seperator-color    is rw;
-    has Str $.header-title-color        is rw;
-    has Str $.immature-task-color       is rw;
-    has Str $.not-displayed-today-color is rw;
-    has Str $.prompt-bold-color         is rw;
-    has Str $.prompt-color              is rw;
-    has Str $.prompt-info-color         is rw;
-    has Str $.tag-color                 is rw;
-    has Str $.reset                     is rw;
+    has Str     $.body-color                is rw;
+    has Str     $.header-alert-color        is rw;
+    has Str     $.header-normal-color       is rw;
+    has Str     $.header-seperator-color    is rw;
+    has Str     $.header-title-color        is rw;
+    has Str     $.immature-task-color       is rw;
+    has Str     $.not-displayed-today-color is rw;
+    has Str     $.prompt-bold-color         is rw;
+    has Str     $.prompt-color              is rw;
+    has Str     $.prompt-info-color         is rw;
+    has Str     $.tag-color                 is rw;
+    has Str     $.reset                     is rw;
 
-    has Str $.pager-command             is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
-    has Str $.editor-command            is rw = 'nano -r 72 -s ispell +3,1 %FILENAME%';
+    has SetHash $.ignore-tags               is rw = SetHash.new;
+    has Str     $.pager-command             is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
+    has Str     $.editor-command            is rw = 'nano -r 72 -s ispell +3,1 %FILENAME%';
 
     method read-config(IO::Path:D $config-file? = $*HOME.add('.task.yaml')) {
         my $contents = '';
@@ -75,6 +76,7 @@ class App::Tasks::Config:ver<0.0.11>:auth<cpan:JMASLAK> {
         $obj.tag-color                 = c($y, 'tag-color')                 if $y<tag-color>:exists;
         $obj.reset                     = c($y, 'reset')                     if $y<reset>:exists;
 
+        $obj.ignore-tags               = $y<ignore-tags>:delete.SetHash     if $y<ignore-tags>:exists;
         $obj.pager-command             = $y<pager-command>:delete           if $y<pager-command>:exists;
         $obj.editor-command            = $y<editor-command>:delete          if $y<editor-command>:exists;
 
@@ -277,6 +279,17 @@ This is the escape codes for tags text in task listings.
 This is the escape code to reset text attributes.
 
 =head1 OTHER ATTRIBUTES
+
+=head1 ignore-tags
+
+This is a SetHash containing tags that are, by default, ignored by the C<list>
+and C<monitor> commands.  It is specified in the YAML file as follows:
+
+  ignore-tags:
+   - abc
+   - def
+
+The above YAML snippet wll define abc and def as "ignored tags".
 
 =head1 editor-command
 
