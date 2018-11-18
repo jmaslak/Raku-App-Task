@@ -139,15 +139,15 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
                     }
                     my $old = $!check-freshness;
                     $!check-freshness = False;
-                    self.task-new-maturity(|@args, :$maturity-date);
+                    self.task-new-maturity(|@args, :$maturity-date, :$tag);
                     $!check-freshness = $old;
                 } elsif $expire-today {
                     my $old = $!check-freshness;
                     $!check-freshness = False;
-                    self.task-new-expire-today(|@args);
+                    self.task-new-expire-today(|@args, :$tag);
                     $!check-freshness = $old;
                 } else {
-                    self.task-new(|@args);
+                    self.task-new(|@args, :$tag);
                 }
             }
             when 'move' {
@@ -226,22 +226,22 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
     }
 
     # Has test
-    method task-new-expire-today(Str $sub?) {
+    method task-new-expire-today(Str $sub?, App::Tasks::Task::Tag :$tag) {
         self.add-lock;
         LEAVE self.remove-lock;
 
-        my $task = self.task-new($sub);
+        my $task = self.task-new($sub, :$tag);
         self.task-set-expiration($task.Int, DateTime.now.local.Date.Str);
 
         return $task;
     }
 
     # Has test
-    method task-new-maturity(Str $sub?, Date:D :$maturity-date) {
+    method task-new-maturity(Str $sub?, Date:D :$maturity-date, App::Tasks::Task::Tag :$tag) {
         self.add-lock;
         LEAVE self.remove-lock;
 
-        my $task = self.task-new($sub);
+        my $task = self.task-new($sub, :$tag);
         self.task-set-maturity($task.Int, $maturity-date.Str);
 
         return $task;
@@ -249,7 +249,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
 
 
     # Has test
-    method task-new(Str $sub?) {
+    method task-new(Str $sub?, App::Tasks::Task::Tag :$tag) {
         self.add-lock;
         LEAVE self.remove-lock;
 
@@ -278,11 +278,15 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             }
         }
 
+        my $tags = SetHash.new;
+        $tags{$tag} = True if $tag.defined;
+
         my $task = App::Tasks::Task.new(
             :task-number($seq),
             :data-dir($!tasks.data-dir),
             :title($subject),
             :created(DateTime.now),
+            :tags($tags),
         );
 
         if defined($body) {
