@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [Feature] Implement tag functionality
 
 0.0.10  2018-10-29T21:14:58-06:00
     - [BUGFIX] Tests did not pass near end of month
