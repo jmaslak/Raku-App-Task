@@ -24,7 +24,7 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
     # All other fields may or may not be present in this structure at
     # any point in time.
 
-    subset Tag of Str where * ~~ /^ \S+ $/;
+    subset Tag of Str where { !$^a.defined or $^a ~~ /^ \S+ $/ };
 
     has Int:D      $.task-number is required;                   # In Index
     has IO::Path:D $.data-dir    is required;

@@ -12,10 +12,11 @@ use App::Tasks;
 
 sub MAIN(
     +@args,
-    Bool :$expire-today?,
-    Bool :$show-immature?,
-    Bool :$all?,
-    Str  :$maturity-date? where { !$_.defined or try Date.new($_) }
+    Bool                  :$expire-today?,
+    Bool                  :$show-immature?,
+    Bool                  :$all?,
+    Str                   :$maturity-date? where { !$_.defined or try Date.new($_) },
+    App::Tasks::Task::Tag :$tag?,
 ) {
     my $task = App::Tasks.new();
     my Date $md;
@@ -26,6 +27,7 @@ sub MAIN(
         :$show-immature,
         :$all,
         :maturity-date($md),
+        :$tag,
     );
 }
 
@@ -119,6 +121,7 @@ instead.
   task.pl6 --expire-today new
   task.pl6 --expire-today new <title>
   task.pl6 --maturity-date=2099-12-31 new
+  task.pl6 --tag=foo new
 
 Create a new task.  If a title is passed on the command line (as a single
 argument, so quotes may be needed if you have a multi-word title), it is
@@ -134,6 +137,9 @@ compatibile with the C<--maturity-date> option.
 If the C<--maturity-date> option is provided, this sets the maturity date
 for the task.  See L<#set-maturity> for more information.
 
+If the C<--tag> option is provided, this sets a tag on the task.  See
+L<#add-tag> for more information.
+
 =head3 list
 
   task.pl6 list
@@ -141,12 +147,16 @@ for the task.  See L<#set-maturity> for more information.
   task.pl6 --show-immature list
   task.pl6 --show-immature list <max-items>
   task.pl6 --all list
+  task.pl6 --tag=foo list
 
 Display a list of active tasks.  Normally, only non-immature tasks are shown.
 If the C<--show-immature> or the C<--all> option is provided, immature tasks
 are also shown.  The C<--all> option additional shows all tasks that have a
 frequency that would normally prevent them from being shown today (see
 the section on C<set-frequency> for more information.
+
+If the C<--tag> option is provided, this lists only tasks with a matching tag.
+See L<#add-tag> for more information.
 
 Optionally, an integer specifying the maximum number of items to display can
 be provided.
@@ -168,7 +178,8 @@ will be displayed with the task.
 Displays an updating list of tasks that auto-refreshes.  It displays as many
 tasks as will fit on the screen.
 
-The C<--show-immature> and C<--all> options function as they do for C<list>.
+The C<--show-immature>, C<--all>, and C<--tag> options function as they do for
+C<list>.
 
 =head3 note
 

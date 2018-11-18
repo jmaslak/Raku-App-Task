@@ -85,6 +85,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
         Bool :$show-immature? is copy = False,
         Bool :$all? = False,
         Date :$maturity-date?,
+        App::Tasks::Task::Tag :$tag?,
     ) {
         $*OUT.out-buffer = False;
 
@@ -192,8 +193,8 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
                 }
                 self.task-close(|@args);
             }
-            when 'list' { self.task-list(|@args, :$show-immature, :$all) }
-            when 'monitor' { self.task-monitor(|@args, :$show-immature, :$all) }
+            when 'list' { self.task-list(|@args, :$show-immature, :$all, :$tag) }
+            when 'monitor' { self.task-monitor(|@args, :$show-immature, :$all, :$tag) }
             when 'coalesce' { self.task-coalesce(|@args) }
             when 'retitle' { self.task-retitle(|@args) }
             when 'set-expire' { self.task-set-expiration(|@args) }
@@ -984,6 +985,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
         Int $wchars?,
         Bool :$count-immature? is copy = False,
         Bool :$count-all? = False,
+        App::Tasks::Task::Tag :$tag?,
     ) {
         self.add-lock;
         LEAVE self.remove-lock;
@@ -993,7 +995,9 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
         # Filter out tasks that we don't want to include because they
         # aren't yet ripe.
         my @tasks = self.read-tasks().grep: {
-            if $count-all {
+            if $tag.defined && ( $^task.tags ∌ $tag ) {
+                False;
+            } elsif $count-all {
                 True;
             } elsif ! $^task.frequency-display-today {
                 False;
@@ -1010,6 +1014,8 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
         if $num.defined and @tasks.elems > $num {
             @tasks = @tasks[0..^$num];
         }
+
+        if !@tasks.elems { return '' };
 
         my Int $maxnum = @tasks.map({ $^a.task-number }).max;
 
@@ -1041,6 +1047,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
         Int $num? where { !$num.defined or $num > 0 },
         Bool :$show-immature? is copy = False,
         Bool :$all = True,
+        App::Tasks::Task::Tag :$tag?,
     ) {
         self.add-lock;
         LEAVE self.remove-lock;
@@ -1050,13 +1057,18 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             $num,
             Int,
             :count-immature($show-immature),
-            :count-all($all)
+            :count-all($all),
+            :tag($tag)
         );
 
         return self.display-with-pager( "Tasklist", $out );
     }
 
-    method task-monitor(Bool :$show-immature? = False, Bool :$all) {
+    method task-monitor(
+        Bool :$show-immature? = False,
+        Bool :$all,
+        App::Tasks::Task::Tag :$tag?,
+    ) {
         self.task-monitor-show();
 
         react {
@@ -1067,12 +1079,16 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
                 done;
             }
             whenever Supply.interval(1) {
-                self.task-monitor-show(:$show-immature, $all);
+                self.task-monitor-show(:$show-immature, :$all, :$tag);
             }
         }
     }
 
-    method task-monitor-show(Bool :$show-immature? is copy = False, Bool :$all = False) {
+    method task-monitor-show(
+        Bool :$show-immature? is copy = False,
+        Bool :$all = False,
+        App::Tasks::Task::Tag :$tag?,
+    ) {
         self.add-lock;
         LEAVE self.remove-lock;
 
@@ -1094,7 +1110,8 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             $rows - 3,
             $cols - 1,
             :count-immature($show-immature),
-            :count-all($all)
+            :count-all($all),
+            :$tag,
         );
         if $out ne $last {
             $last = $out;
