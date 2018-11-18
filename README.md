@@ -115,6 +115,8 @@ Display a list of active tasks. Normally, only non-immature tasks are shown. If 
 
 If the `--tag` option is provided, this lists only tasks with a matching tag. See [#add-tag](#add-tag) for more information.
 
+Normally, tasks that include any tag that is listed in the `ignore-tags` section of the config file (if it exists) are not displayed. However, they will be displayed if `--all` is specified or if the `--tag` option includes one of the tags associated with the task.
+
 Optionally, an integer specifying the maximum number of items to display can be provided.
 
 ### show

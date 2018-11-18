@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.0.12  2018-11-18T10:11:30-07:00
     - [Feature] Allow some tags to be ignored automatically in --list
       and --monitor.
     - [BUGFIX] Could not interactively supply tag name in add/remove-tag
