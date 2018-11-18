@@ -1,6 +1,7 @@
-Title: [task] feature: Use vi (and set up right extensions and such)
+Title: Use vi (and set up right extensions and such)
 Created: 1439412995
 Task-Id: 6159523072689145194167
+Tags: feature
 --- 1439412995
 We should be able to use VI.  It would be helpful if a stable extension 
 was used for this.

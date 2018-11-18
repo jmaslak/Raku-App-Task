@@ -1,6 +1,7 @@
-Title: [task] BUG: No confirmation on close without note
+Title: No confirmation on close without note
 Created: 1437711367
 Task-Id: 6159523072603513975683
+Tags: bug
 --- 1437711367
 If you close a task (task close x), and say "Y" to enter a note, but 
 then don't add anything in the note, it will close the task without 
@@ -9,3 +10,5 @@ confirmation.
 This may be a bit trickier than I frist thought, since the "Save this 
 task" confirmation is in the addnote() routine.  It probably should be 
 broken out to it's own routine.
+--- 1542511120
+Added tag bug

@@ -1,6 +1,7 @@
-Title: [task] feature: Don't colorize non-terminals
+Title: Don't colorize non-terminals
 Created: 1437511791
 Task-Id: 6159523072576011483586
+Tags: feature
 --- 1437511791
 When piping the output (Ex: task list | grep 'foo'), don't colorize the output
 inappropriately.

@@ -1,6 +1,7 @@
-Title: [task] feature: Add lots more input validation
+Title: Add lots more input validation
 Created: 1437537099
 Task-Id: 6159523072675979259532
+Tags: feature
 --- 1437537099
 In particular, make sure to validate that the numeric task arguments 
 actually make sense (numbers, no decimal, positive, etc).

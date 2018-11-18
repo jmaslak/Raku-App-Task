@@ -1,6 +1,7 @@
-Title: [task] refactor: Allow for internationalization/localization
+Title: Allow for internationalization/localization
 Created: 1437578505
 Task-Id: 6159523072713919314450
+Tags: refactor
 --- 1538856865
 The App::Tasks::Config object should facilitate this.
 
