@@ -17,8 +17,6 @@ class MockInFH {
 
 sub tests {
     my $tmpdir = tempdir.IO;    # Get IO::Path object for tmpdir.
-    note "# Using directory {$tmpdir.Str}";
-
     my $cwd = $*CWD;
     say $*CWD;
 

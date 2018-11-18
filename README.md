@@ -90,6 +90,7 @@ When `task.pl` is executed without any options, it enters an interactive mode. T
     task.pl6 --expire-today new
     task.pl6 --expire-today new <title>
     task.pl6 --maturity-date=2099-12-31 new
+    task.pl6 --tag=foo new
 
 Create a new task. If a title is passed on the command line (as a single argument, so quotes may be needed if you have a multi-word title), it is simply created with an empty body.
 
@@ -99,6 +100,8 @@ If the `--expire-today` option is provided, the new task will have an expiration
 
 If the `--maturity-date` option is provided, this sets the maturity date for the task. See [#set-maturity](#set-maturity) for more information.
 
+If the `--tag` option is provided, this sets a tag on the task. See [#add-tag](#add-tag) for more information.
+
 ### list
 
     task.pl6 list
@@ -106,8 +109,11 @@ If the `--maturity-date` option is provided, this sets the maturity date for the
     task.pl6 --show-immature list
     task.pl6 --show-immature list <max-items>
     task.pl6 --all list
+    task.pl6 --tag=foo list
 
 Display a list of active tasks. Normally, only non-immature tasks are shown. If the `--show-immature` or the `--all` option is provided, immature tasks are also shown. The `--all` option additional shows all tasks that have a frequency that would normally prevent them from being shown today (see the section on `set-frequency` for more information.
+
+If the `--tag` option is provided, this lists only tasks with a matching tag. See [#add-tag](#add-tag) for more information.
 
 Optionally, an integer specifying the maximum number of items to display can be provided.
 
@@ -126,7 +132,7 @@ Display a task's details. This uses the `less` pager if needed. All notes will b
 
 Displays an updating list of tasks that auto-refreshes. It displays as many tasks as will fit on the screen.
 
-The `--show-immature` and `--all` options function as they do for `list`.
+The `--show-immature`, `--all`, and `--tag` options function as they do for `list`.
 
 ### note
 
@@ -199,6 +205,18 @@ The idea is that with a large task list with lots of low priority tasks, it low 
     task.pl6 set-maturity <task-number>
 
 Sets the maturity date. Before the maturity date, a task will not be displayed with the [#list](#list) or [#monitor](#monitor) commands before the maturity date (unless the `--show-immature` option is also provided to the [#list](#list) or [#monitor](#monitor) commands).
+
+### add-tag
+
+    task.pl6 add-tag <task-number> <tag>
+
+Sets a tag (a string with no whitespace) for a given task number. Tags can be used to filter tasks with [#list](#list). They are also displayed in task lists.
+
+### remove-tag
+
+    task.pl6 remove-tag <task-number> <tag>
+
+Removes a tag (a string with no whitespace) for a given task number.
 
 ### coalesce
 

@@ -18,8 +18,6 @@ class MockInFH {
 
 sub tests {
     my $tmpdir = tempdir.IO;    # Get IO::Path object for tmpdir.
-    note "# Using directory {$tmpdir.Str}";
-
     my $task = App::Tasks.new( :data-dir($tmpdir), :config(App::Tasks::Config.no-color) );
 
     my @lines = (
