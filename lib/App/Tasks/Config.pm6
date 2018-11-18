@@ -20,6 +20,7 @@ class App::Tasks::Config:ver<0.0.10>:auth<cpan:JMASLAK> {
     has Str $.prompt-bold-color         is rw;
     has Str $.prompt-color              is rw;
     has Str $.prompt-info-color         is rw;
+    has Str $.tag-color                 is rw;
     has Str $.reset                     is rw;
 
     has Str $.pager-command             is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
@@ -71,6 +72,7 @@ class App::Tasks::Config:ver<0.0.10>:auth<cpan:JMASLAK> {
         $obj.prompt-bold-color         = c($y, 'prompt-bold-color')         if $y<prompt-bold-color>:exists;
         $obj.prompt-color              = c($y, 'prompt-color')              if $y<prompt-color>:exists;
         $obj.prompt-info-color         = c($y, 'prompt-info-color')         if $y<prompt-info-color>:exists;
+        $obj.tag-color                 = c($y, 'tag-color')                 if $y<tag-color>:exists;
         $obj.reset                     = c($y, 'reset')                     if $y<reset>:exists;
 
         $obj.pager-command             = $y<pager-command>:delete           if $y<pager-command>:exists;
@@ -98,6 +100,7 @@ class App::Tasks::Config:ver<0.0.10>:auth<cpan:JMASLAK> {
         $!prompt-bold-color         = c('bold green');
         $!prompt-color              = c('bold cyan');
         $!prompt-info-color         = c('cyan');
+        $!tag-color                 = c('red');
         $!reset                     = c('reset');
     }
 
@@ -112,6 +115,7 @@ class App::Tasks::Config:ver<0.0.10>:auth<cpan:JMASLAK> {
         $!prompt-bold-color         = c('green');
         $!prompt-color              = c('cyan');
         $!prompt-info-color         = c('cyan');
+        $!tag-color                 = c('28');
         $!reset                     = c('reset');
     }
 
@@ -126,6 +130,7 @@ class App::Tasks::Config:ver<0.0.10>:auth<cpan:JMASLAK> {
         $!prompt-bold-color         = '';
         $!prompt-color              = '';
         $!prompt-info-color         = '';
+        $!tag-color                 = '';
         $!reset                     = '';
     }
 
@@ -261,7 +266,11 @@ This is the escape codes for the non-bolded text in the user prompts.
 
 =head2 prompt-info-color
 
-This is the escape codes for informational text in the user prompts
+This is the escape codes for informational text in the user prompts.
+
+=head2 tag-color
+
+This is the escape codes for tags text in task listings.
 
 =head2 reset
 

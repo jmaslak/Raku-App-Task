@@ -270,6 +270,19 @@ with the L<#list> or L<#monitor> commands before the maturity date (unless the
 C<--show-immature> option is also provided to the L<#list> or L<#monitor>
 commands).
 
+=head3 add-tag
+
+  task.pl6 add-tag <task-number> <tag>
+
+Sets a tag (a string with no whitespace) for a given task number.  Tags can
+be used to filter tasks with L<#list>. They are also displayed in task lists.
+
+=head3 remove-tag
+
+  task.pl6 remove-tag <task-number> <tag>
+
+Removes a tag (a string with no whitespace) for a given task number.
+
 =head3 coalesce
 
   task.pl6 coalesce

@@ -71,6 +71,10 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             display      => 'Task-ID',
             hex          => True,
         },
+        tags => {
+            order        => 7,
+            display      => 'Tags',
+        },
     );
 
     my $H_LEN = %H_INFO.values.map( { .<display>.chars } ).max;
@@ -103,6 +107,8 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
                 [ 'Expire Tasks',               'expire' ],
                 [ 'Set Task Maturity Date',     'set-maturity' ],
                 [ 'Set Task Display Frequency', 'set-frequency' ],
+                [ 'Add Tag',                    'add-tag' ],
+                [ 'Remove Tag',                 'remove-tag' ],
                 [ 'Quit to Shell',              'quit' ],
             );
 
@@ -194,6 +200,8 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             when 'expire' { self.expire(|@args) }
             when 'set-maturity' { self.task-set-maturity(|@args) }
             when 'set-frequency' { self.task-set-frequency(|@args) }
+            when 'add-tag' { self.task-add-tag(|@args) }
+            when 'remove-tag' { self.task-remove-tag(|@args) }
             default {
                 say "WRONG USAGE";
             }
@@ -381,6 +389,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
         $out ~= self.sprint-header-line: 'not-before', $task.not-before, :alert-in-past(False) if $task.not-before.defined;
         $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-past if $task.expires.defined;
         $out ~= self.sprint-header-line: 'display-frequency', $task.display-frequency if $task.display-frequency.defined;
+        $out ~= self.sprint-header-line: 'tags', $task.tags.keys.join(' ') if $task.tags.elems;
 
         $out ~= "\n";
 
@@ -1006,9 +1015,11 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
 
         my @out = @tasks.map: -> $task {
             my $title = $task.title;
+            my $tags = $task.tags.elems ?? '[' ~ $task.tags.keys.join('] [') ~ '] ' !! '';
+
             my $desc  = $title;
             if ( defined($wchars) ) {
-                $desc = substr( $title, 0, $wchars - $maxnum.chars - 1 );
+                $desc = substr( $title, 0, $wchars - $maxnum.chars - 1 - $tags.chars );
             }
 
             my $color = $.config.prompt-bold-color;
@@ -1018,7 +1029,9 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
                 $color = $.config.not-displayed-today-color;
             }
 
-            "{$.config.prompt-info-color}{$task.task-number} $color$desc" ~ $.config.reset ~ "\n"
+            my $tcolor = $.config.tag-color;
+
+            "{$.config.prompt-info-color}{$task.task-number} $tcolor$tags$color$desc" ~ $.config.reset ~ "\n"
         };
 
         return @out.join();
