@@ -484,15 +484,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             return;
         }
 
-        if !$tasknum.defined {
-            my @d = $!tasks.get-task-filenames();
-            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
-
-            $tasknum = self.no-menu-prompt(
-                "$P1 Please enter task number to modify $P2",
-                @validtasks
-            ) or exit;
-        }
+        $tasknum //= self.ask-for-tasknum;
 
         if !$newtitle.defined or $newtitle eq '' {
             $newtitle = self.str-prompt("$P1 Please enter the new title $P2");
@@ -557,16 +549,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             return;
         }
 
-        if !$tasknum.defined {
-            my @d = $!tasks.get-task-filenames();
-            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
-
-            my $tn = self.no-menu-prompt(
-                "$P1 Please enter task number to modify $P2",
-                @validtasks
-            ) or exit;
-            $tasknum = $tn.Int;
-        }
+        $tasknum //= self.ask-for-tasknum;
 
         while !$day.defined or $day eq '' {
             $day = self.str-prompt("$P1 Please enter the last valid day for this task $P2");
@@ -626,16 +609,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             return;
         }
 
-        if !$tasknum.defined {
-            my @d = $!tasks.get-task-filenames();
-            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
-
-            my $tn = self.no-menu-prompt(
-                "$P1 Please enter task number to modify $P2",
-                @validtasks
-            ) or exit;
-            $tasknum = $tn.Int;
-        }
+        $tasknum //= self.ask-for-tasknum;
 
         while !$day.defined or $day eq '' {
             $day = self.str-prompt("$P1 Please enter the day to start displaying this task $P2");
@@ -657,6 +631,44 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
     }
 
     # Tested
+    method task-add-tag(
+        Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 },
+        App::Tasks::Task::Tag $tag?
+    ) {
+        self.add-lock;
+        LEAVE self.remove-lock;
+
+        if ! self.check-task-log() {
+            say "Can't set tag - task numbers may have changed since last 'task list'";
+            return;
+        }
+
+        $tasknum //= self.ask-for-tasknum;
+        $tag     //= self.ask-for-tag;
+
+        return self.add-tag($tasknum, $tag);
+    }
+
+    # Tested
+    method task-remove-tag(
+        Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 },
+        App::Tasks::Task::Tag $tag?
+    ) {
+        self.add-lock;
+        LEAVE self.remove-lock;
+
+        if ! self.check-task-log() {
+            say "Can't set tag - task numbers may have changed since last 'task list'";
+            return;
+        }
+
+        $tasknum //= self.ask-for-tasknum;
+        $tag     //= self.ask-for-tag;
+
+        return self.remove-tag($tasknum, $tag);
+    }
+
+    # Tested
     method task-set-frequency(Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 }, Int $frequency? is copy) {
         self.add-lock;
         LEAVE self.remove-lock;
@@ -666,16 +678,7 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
             return;
         }
 
-        if !$tasknum.defined {
-            my @d = $!tasks.get-task-filenames();
-            my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
-
-            my $tn = self.no-menu-prompt(
-                "$P1 Please enter task number to modify $P2",
-                @validtasks
-            ) or exit;
-            $tasknum = $tn.Int;
-        }
+        $tasknum //= self.ask-for-tasknum;
 
         while ! $frequency.defined {
             my $s = self.str-prompt("$P1 Please enter desired days apart for task display $P2");
@@ -727,6 +730,36 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
 
         $task.add-note($note);
         $task.change-display-frequency($frequency);
+        $task.to-file;
+
+        @!TASKS = Array.new;
+    }
+
+    # Indirectly tested
+    method add-tag(Int:D $tasknum where * ~~ ^100_000, App::Tasks::Task::Tag:D $tag) {
+        self.add-lock;
+        LEAVE self.remove-lock;
+
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
+        if $task.tags ∋ $tag { return };        # Don't add a duplicate
+
+        $task.add-note: "Added tag $tag";
+        $task.add-tag:  $tag;
+        $task.to-file;
+
+        @!TASKS = Array.new;
+    }
+
+    # Indirectly tested
+    method remove-tag(Int:D $tasknum where * ~~ ^100_000, App::Tasks::Task::Tag:D $tag) {
+        self.add-lock;
+        LEAVE self.remove-lock;
+
+        my $task = App::Tasks::Task.from-file($!tasks.data-dir, $tasknum);
+        if $task.tags ∌ $tag { return };        # Don't remove a non-existant tag
+
+        $task.add-note:   "Removed tag $tag";
+        $task.remove-tag: $tag;
         $task.to-file;
 
         @!TASKS = Array.new;
@@ -1288,6 +1321,29 @@ class App::Tasks:ver<0.0.10>:auth<cpan:JMASLAK> {
         my $outprompt = $.config.prompt-color ~ $prompt ~ $.config.reset;
         print $outprompt if $.write-output;
         return $.INFH.get;
+    }
+
+    method ask-for-tasknum(-->Int:D) {
+        my @d = $!tasks.get-task-filenames();
+        my (@validtasks) = @d.map: { $^a.basename ~~ m/^ (\d+) /; Int($0) };
+
+        my $tn = self.no-menu-prompt(
+            "$P1 Please enter task number to modify $P2",
+            @validtasks
+        ) or exit;
+
+        return $tn.Int;
+    }
+       
+    method ask-for-tag(-->App::Tasks::Task::Tag:D) { 
+        loop {
+            my $s = self.str-prompt("$P1 Please enter tag $P2");
+            if $s !~~ m/^ \S+ $/ {
+                say "Tag must not be empty or contain any spaces\n";
+                next;
+            }
+            return $s;
+        }
     }
 
     method clear() {

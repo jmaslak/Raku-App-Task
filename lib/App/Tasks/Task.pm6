@@ -8,17 +8,38 @@ use v6.c;
 class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
     use App::Tasks::TaskBody;
 
-    has Int:D      $.task-number is required;
+    # The key header structures will be stored (potentially) in an index
+    # file.
+    #
+    # These include:
+    #   task-number
+    #   file
+    #   created
+    #   expires
+    #   not-before
+    #   display-frequency
+    #   tags (set of strings)
+    #   title
+    #
+    # All other fields may or may not be present in this structure at
+    # any point in time.
+
+    subset Tag of Str where * ~~ /^ \S+ $/;
+
+    has Int:D      $.task-number is required;                   # In Index
     has IO::Path:D $.data-dir    is required;
-    has IO::Path   $.file;
-    has Str:D      $.title       is required;
-    has DateTime:D $.created     is required;
-    has Date       $.expires;
-    has Date       $.not-before;  # Hide before this date
+    has IO::Path   $.file;                                      # In Index
+    has Str:D      $.title       is required;                   # In Index
+    has DateTime:D $.created     is required;                   # In Index
+    has Date       $.expires;                                   # In Index
+    has Date       $.not-before;  # Hide before this date       # In Index
+    has SetHash:D  $.tags = SetHash.new;                        # In Index
     has Array:D    $.body = Array[App::Tasks::TaskBody].new;
     has Int:D      $.task-id = new-task-id;
     has Int:D      $.version = 2;
-    has Int        $.display-frequency;
+    has Int        $.display-frequency;                         # In Index
+
+    has Bool:D     $.complete = True;   # Indicates complete file loaded
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
@@ -30,6 +51,7 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
         my DateTime $created;
         my Date     $expires;
         my Date     $not-before;
+        my SetHash  $tags = SetHash.new;
         my Int      $task-id;
         my Int      $display-frequency;
 
@@ -52,6 +74,7 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
                 when 'created'           { $created           = DateTime.new($value.Int) }
                 when 'expires'           { $expires           = Date.new($value) }
                 when 'not-before'        { $not-before        = Date.new($value) }
+                when 'tags'              { $tags              = $value.comb( /\S+/ ).SetHash }
                 when 'task-id'           { $task-id           = $value.Int }
                 when 'display-frequency' { $display-frequency = $value.Int }
                 default           { die("Unknown header: $field") }
@@ -98,6 +121,7 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
             :expires($expires),
             :not-before($not-before),
             :display-frequency($display-frequency),
+            :tags($tags),
             :task-id($task-id),
             :body(@body),
         );
@@ -109,8 +133,15 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
         return $obj;
     }
 
+    # Refresh task, reload it from disk
+    method refresh-task(-->Nil) {
+        # This is currently a no-op
+    }
+
     # Write to a file
     method to-file(-->Nil) {
+        self.refresh-task;
+
         # Basic requirements for a task
         if ! self.data-dir.defined    { die("Data directory not defined") }
         if ! self.task-number.defined { die("Task number not defined") }
@@ -130,9 +161,10 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
         $fh.say: "Task-Id: ", self.task-id;
 
         # Headers, optional
-        $fh.say: "Expires: ",           self.expires           if self.expires.defined;
-        $fh.say: "Not-Before: ",        self.not-before        if self.not-before.defined;
-        $fh.say: "Display-Frequency: ", self.display-frequency if self.display-frequency.defined;
+        $fh.say: "Expires: ",           self.expires             if self.expires.defined;
+        $fh.say: "Tags: ",              self.tags.keys.join(' ') if self.tags.elems;
+        $fh.say: "Not-Before: ",        self.not-before          if self.not-before.defined;
+        $fh.say: "Display-Frequency: ", self.display-frequency   if self.display-frequency.defined;
 
         # Body
         for self.body -> $body {
@@ -145,6 +177,8 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
 
     # Add a task note to this object
     method add-note(Str:D $text) {
+        self.refresh-task;
+
         my $note-text = S/\n $// given $text;
 
         my $note = App::Tasks::TaskBody.new(:date(DateTime.now), :text($note-text));
@@ -153,21 +187,39 @@ class App::Tasks::Task:ver<0.0.10>:auth<cpan:JMASLAK> {
 
     # Update title
     method change-title(Str:D $text) {
+        self.refresh-task;
+
         $!title = $text;
     }
 
     # Update Expiration
     method change-expiration(Date $day) {
+        self.refresh-task;
+
         $!expires = $day;
     }
 
     # Update Not-Before
     method change-not-before(Date $day) {
+        self.refresh-task;
+
         $!not-before = $day;
+    }
+
+    # Update tags
+    method add-tag(Tag:D $tag) {
+        self.refresh-task;
+        $!tags{$tag} = True;
+    }
+    method remove-tag(Tag:D $tag) {
+        self.refresh-task;
+        $!tags{$tag} = False;
     }
 
     # Update Display-Frequency
     method change-display-frequency(Int:D $frequency where * ≥ 0) {
+        self.refresh-task;
+
         $!display-frequency = $frequency;
     }
 
