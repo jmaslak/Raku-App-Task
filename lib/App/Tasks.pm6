@@ -647,7 +647,7 @@ class App::Tasks:ver<0.0.11>:auth<cpan:JMASLAK> {
     # Tested
     method task-add-tag(
         Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 },
-        App::Tasks::Task::Tag $tag?
+        App::Tasks::Task::Tag $tag? is copy
     ) {
         self.add-lock;
         LEAVE self.remove-lock;
@@ -666,7 +666,7 @@ class App::Tasks:ver<0.0.11>:auth<cpan:JMASLAK> {
     # Tested
     method task-remove-tag(
         Int $tasknum? is copy where { !$tasknum.defined or $tasknum > 0 },
-        App::Tasks::Task::Tag $tag?
+        App::Tasks::Task::Tag $tag? is copy
     ) {
         self.add-lock;
         LEAVE self.remove-lock;
