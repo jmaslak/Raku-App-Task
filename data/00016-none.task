@@ -1,4 +1,16 @@
-Title: Tags in 'list' should be sorted
-Created: 1542747326
-Task-Id: 6170989307625402737096
+Title: Task note doesn't properly exit for invalid task ID
+Created: 1542816953
+Task-Id: 6171267815070884803383
 Tags: bug
+--- 1542816953
+Please enter any notes that should appear for this task below this line. 
+------------------------------------------------------------------------ 
+Example (there is no task 66):
+
+$ task note 66
+Could not locate task number 66
+
+[task] Add a Note to This Task [Y/n]? > y
+Invalid choice, please try again
+
+(repeats)

@@ -394,7 +394,7 @@ class App::Tasks:ver<0.0.12>:auth<cpan:JMASLAK> {
         $out ~= self.sprint-header-line: 'not-before', $task.not-before, :alert-in-past(False) if $task.not-before.defined;
         $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-past if $task.expires.defined;
         $out ~= self.sprint-header-line: 'display-frequency', $task.display-frequency if $task.display-frequency.defined;
-        $out ~= self.sprint-header-line: 'tags', $task.tags.keys.join(' ') if $task.tags.elems;
+        $out ~= self.sprint-header-line: 'tags', $task.tags.keys.sort.join(' ') if $task.tags.elems;
 
         $out ~= "\n";
 
@@ -1031,7 +1031,10 @@ class App::Tasks:ver<0.0.12>:auth<cpan:JMASLAK> {
 
         my @out = @tasks.map: -> $task {
             my $title = $task.title;
-            my $tags = $task.tags.elems ?? '[' ~ $task.tags.keys.join('] [') ~ '] ' !! '';
+            my $tags = '';
+            if $task.tags.elems {
+                $tags = '[' ~ $task.tags.keys.sort.join('] [') ~ '] ';
+            }
 
             my $desc  = $title;
             if ( defined($wchars) ) {

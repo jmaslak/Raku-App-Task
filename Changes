@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [BUGFIX] Tags should always be sorted before display in --list
 
 0.0.12  2018-11-18T10:11:30-07:00
     - [Feature] Allow some tags to be ignored automatically in --list
