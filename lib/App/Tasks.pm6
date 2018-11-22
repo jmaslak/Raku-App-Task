@@ -390,10 +390,10 @@ class App::Tasks:ver<0.0.12>:auth<cpan:JMASLAK> {
         # Headers
         $out ~= self.sprint-header-line: 'title', $task.title;
         $out ~= self.sprint-header-line: 'created', $task.created;
-        $out ~= self.sprint-header-line: 'task-id', $task.task-id;
         $out ~= self.sprint-header-line: 'not-before', $task.not-before, :alert-in-past(False) if $task.not-before.defined;
         $out ~= self.sprint-header-line: 'expires', $task.expires, :alert-in-past if $task.expires.defined;
         $out ~= self.sprint-header-line: 'display-frequency', $task.display-frequency if $task.display-frequency.defined;
+        $out ~= self.sprint-header-line: 'task-id', $task.task-id;
         $out ~= self.sprint-header-line: 'tags', $task.tags.keys.sort.join(' ') if $task.tags.elems;
 
         $out ~= "\n";
