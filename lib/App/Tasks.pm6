@@ -736,10 +736,11 @@ class App::Tasks:ver<0.0.12>:auth<cpan:JMASLAK> {
 
         my $note;
         if $task.display-frequency.defined {
-            $note = "Updated display frequency from every " ~ $task.display-frequency.Str
-                ~ " days to every $frequency days";
+            $note = "Updated display frequency from every "
+                ~ in-days($task.display-frequency)
+                ~ " to every " ~ in-days($frequency);
         } else {
-            $note = "Added display frequency of every $frequency days";
+            $note = "Added display frequency of every " ~ in-days($frequency);
         }
 
         $task.add-note($note);
@@ -1509,6 +1510,16 @@ class App::Tasks:ver<0.0.12>:auth<cpan:JMASLAK> {
         my $year    = $dt.year;
 
         return "$weekday $month $day 23:59:59 $year";
+    }
+
+    # Indirectly tested
+    # Displays a number followed by either the word "day" or "days"
+    sub in-days(Int() $days) {
+        if $days == 1 {
+            return "$days day";
+        } else {
+            return "$days days";
+        }
     }
 
     sub ttyname(uint32) returns Str is native { * };
