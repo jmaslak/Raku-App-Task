@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Config:ver<0.0.12>:auth<cpan:JMASLAK> {
+class App::Tasks::Config:ver<0.0.13>:auth<cpan:JMASLAK> {
 
     use Terminal::ANSIColor;
     use YAMLish;
