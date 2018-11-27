@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::TaskBody:ver<0.0.13>:auth<cpan:JMASLAK> {
+class App::Tasks::TaskBody:ver<0.0.14>:auth<cpan:JMASLAK> {
     has DateTime $.date;
     has Str      $.text;
 }
