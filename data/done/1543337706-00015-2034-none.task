@@ -1,0 +1,37 @@
+Title: Closing invalid task generates an error late
+Created: 1543283729
+Task-Id: 6173134916499855470878
+Tags: bug
+--- 1543283729
+Please enter any notes that should appear for this task below this line. 
+------------------------------------------------------------------------ 
+Example (there is no task 6):
+[0] red:jmaslak$ task close 6
+Could not locate task number 6
+
+[task] Add a Note to This Task [Y/n]? > n
+Not adding note
+Task not found
+  in method get-task-filename at 
+/data/home/jmaslak/.rakudobrew/moar-2018.09/install/share/perl6/site/sources/C48D8E2ADCB97C44D5B16A7C940F41EAE204D2BB 
+(App::Tasks) line 316
+  in method task-close at 
+/data/home/jmaslak/.rakudobrew/moar-2018.09/install/share/perl6/site/sources/C48D8E2ADCB97C44D5B16A7C940F41EAE204D2BB 
+(App::Tasks) line 943
+  in method start at 
+/data/home/jmaslak/.rakudobrew/moar-2018.09/install/share/perl6/site/sources/C48D8E2ADCB97C44D5B16A7C940F41EAE204D2BB 
+(App::Tasks) line 194
+  in sub MAIN at 
+/data/home/jmaslak/.rakudobrew/moar-2018.09/install/share/perl6/site/resources/0F4316E9BFEC7C3ECE71A04C87233E32B4EC9B0D 
+line 24
+  in block <unit> at 
+/data/home/jmaslak/.rakudobrew/moar-2018.09/install/share/perl6/site/resources/0F4316E9BFEC7C3ECE71A04C87233E32B4EC9B0D 
+line 13
+  in sub MAIN at 
+/data/home/jmaslak/.rakudobrew/bin/../moar-2018.09/install/share/perl6/site/bin/task.pl6 
+line 2
+  in block <unit> at 
+/data/home/jmaslak/.rakudobrew/bin/../moar-2018.09/install/share/perl6/site/bin/task.pl6 
+line 2
+--- 1543337706
+Fixed for both "note" and "close"

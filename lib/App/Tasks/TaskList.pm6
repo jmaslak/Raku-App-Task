@@ -40,3 +40,13 @@ method get-task-filenames(-->Array[IO::Path:D]) {
     return @tasks;
 }
 
+# Is the task valid?
+method exists(Int:D $tasknum -->Bool:D) {
+    my @tasks = self.read-tasks();
+    if @tasks.first( { $^a.task-number == $tasknum } ).defined {
+        return True;
+    } else {
+        return False;
+    }
+}
+

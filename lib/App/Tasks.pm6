@@ -377,8 +377,7 @@ class App::Tasks:ver<0.0.13>:auth<cpan:JMASLAK> {
         self.add-lock;
         LEAVE self.remove-lock;
 
-        my @tasks = self.read-tasks();
-        if ! @tasks.first( { $^a.task-number == $tasknum } ).defined {
+        if ! $!tasks.exists($tasknum) {
             $*ERR.say("Could not locate task number $tasknum");
             return;
         }
@@ -790,6 +789,11 @@ class App::Tasks:ver<0.0.13>:auth<cpan:JMASLAK> {
             return;
         }
 
+        if ! $!tasks.exists($tasknum) {
+            $*ERR.say("Could not locate task number $tasknum");
+            return;
+        }
+
         if ! $orignote.defined {
             self.task-show($tasknum);
         }
@@ -934,6 +938,11 @@ class App::Tasks:ver<0.0.13>:auth<cpan:JMASLAK> {
 
         if $interactive and ! self.check-task-log() {
             say "Can't close task - task numbers may have changed since last 'task list'";
+            return;
+        }
+        
+        if ! $!tasks.exists($tasknum) {
+            $*ERR.say("Could not locate task number $tasknum");
             return;
         }
 

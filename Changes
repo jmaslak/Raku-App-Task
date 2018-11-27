@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [BUGFIX] Closing or adding a note to a non-existent task now gives
+      a more friendly error message without a stack trace.
 
 0.0.13  2018-11-22T13:01:44-07:00
     - [BUGFIX] Tags should always be sorted before display in --list
