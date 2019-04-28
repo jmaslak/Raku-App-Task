@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [refactor] Adopt new P5localtime interface
 
 0.0.14  2018-11-27T09:56:51-07:00
     - [BUGFIX] Closing or adding a note to a non-existent task now gives
