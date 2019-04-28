@@ -96,11 +96,11 @@ Create a new task. If a title is passed on the command line (as a single argumen
 
 If a title is not provided, an interactive dialog with the user asks for the title, and, optionally a more detailed set of notes.
 
-If the `--expire-today` option is provided, the new task will have an expiration date of today. See [#expire](#expire) for more details. This is not compatibile with the `--maturity-date` option.
+If the `--expire-today` option is provided, the new task will have an expiration date of today. See [expire](#expire) for more details. This is not compatibile with the `--maturity-date` option.
 
-If the `--maturity-date` option is provided, this sets the maturity date for the task. See [#set-maturity](#set-maturity) for more information.
+If the `--maturity-date` option is provided, this sets the maturity date for the task. See [set-maturity](#set-maturity) for more information.
 
-If the `--tag` option is provided, this sets a tag on the task. See [#add-tag](#add-tag) for more information.
+If the `--tag` option is provided, this sets a tag on the task. See [add-tag](#add-tag) for more information.
 
 ### list
 
@@ -113,7 +113,7 @@ If the `--tag` option is provided, this sets a tag on the task. See [#add-tag](#
 
 Display a list of active tasks. Normally, only non-immature tasks are shown. If the `--show-immature` or the `--all` option is provided, immature tasks are also shown. The `--all` option additional shows all tasks that have a frequency that would normally prevent them from being shown today (see the section on `set-frequency` for more information.
 
-If the `--tag` option is provided, this lists only tasks with a matching tag. See [#add-tag](#add-tag) for more information.
+If the `--tag` option is provided, this lists only tasks with a matching tag. See [add-tag](#add-tag) for more information.
 
 Normally, tasks that include any tag that is listed in the `ignore-tags` section of the config file (if it exists) are not displayed. However, they will be displayed if `--all` is specified or if the `--tag` option includes one of the tags associated with the task.
 
@@ -140,9 +140,9 @@ The `--show-immature`, `--all`, and `--tag` options function as they do for `lis
 
     task.pl6 note <task-number>
 
-Adds a note to a task. The note is appended to the task. Notes are visible via the [#show](#show) command.
+Adds a note to a task. The note is appended to the task. Notes are visible via the [show](#show) command.
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 ### close
 
@@ -150,11 +150,11 @@ You must have done a [#list](#list) in the current window before you can make no
 
 Closes a task (moves it from the 
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 This will automatically execute a `#coalesce`. Thus task numbers will change after using this.
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 ### retitle
 
@@ -162,7 +162,7 @@ You must have done a [#list](#list) in the current window before you can make no
 
 Change the title on a task.
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 ### move
 
@@ -172,15 +172,15 @@ Moves a task from it's current position to a new position (as seen by the list c
 
 This will automatically execute a `#coalesce`. Thus task numbers will change after using this.
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 ### set-expire
 
     task.pl6 set-expire <task-number>
 
-Set an expiration date. This is the last day that the task is considered valid. This is used for tasks that don't make sense after a given date. For instance, if you add a task to buy a Christmas turkey, if you don't actually do that task before Christmas, it's likely not relevant after Christmas. Thus, you might set an expiration date of December 25th. At that point, it will be pruned by the [#expire](#expire) command.
+Set an expiration date. This is the last day that the task is considered valid. This is used for tasks that don't make sense after a given date. For instance, if you add a task to buy a Christmas turkey, if you don't actually do that task before Christmas, it's likely not relevant after Christmas. Thus, you might set an expiration date of December 25th. At that point, it will be pruned by the [expire](#expire) command.
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 ### expire
 
@@ -190,7 +190,7 @@ This closes any open tasks with an expiration date prior to the current date. It
 
 This will automatically execute a `#coalesce`. Thus task numbers will change after using this.
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 ### set-frequency
 
@@ -206,13 +206,13 @@ The idea is that with a large task list with lots of low priority tasks, it low 
 
     task.pl6 set-maturity <task-number>
 
-Sets the maturity date. Before the maturity date, a task will not be displayed with the [#list](#list) or [#monitor](#monitor) commands before the maturity date (unless the `--show-immature` option is also provided to the [#list](#list) or [#monitor](#monitor) commands).
+Sets the maturity date. Before the maturity date, a task will not be displayed with the [list](#list) or [monitor](#monitor) commands before the maturity date (unless the `--show-immature` option is also provided to the [list](#list) or [monitor](#monitor) commands).
 
 ### add-tag
 
     task.pl6 add-tag <task-number> <tag>
 
-Sets a tag (a string with no whitespace) for a given task number. Tags can be used to filter tasks with [#list](#list). They are also displayed in task lists.
+Sets a tag (a string with no whitespace) for a given task number. Tags can be used to filter tasks with [list](#list). They are also displayed in task lists.
 
 ### remove-tag
 
@@ -228,22 +228,22 @@ Coalesces task numbers, so that the first task becomes task number 1, and any ga
 
 This will automatically execute a `#coalesce`. Thus task numbers will change after using this.
 
-You must have done a [#list](#list) in the current window before you can make notes, in case the task numbers have changed.
+You must have done a [list](#list) in the current window before you can make notes, in case the task numbers have changed.
 
 OPTIONS
 -------
 
 ### --expire-today
 
-This option is used along with the [#new](#new) command to create a task that will expire today (see the [#expire](#expire) option for more details).
+This option is used along with the [new](#new) command to create a task that will expire today (see the [expire](#expire) option for more details).
 
 ### --show-immature
 
-Show all open tasks. Normally, tasks that are "immature" (see the L#<set-maturity> command) are not displayed by the [#monitor](#monitor) or [#list](#list) commands. This option changes that behavior.
+Show all open tasks. Normally, tasks that are "immature" (see the L#<set-maturity> command) are not displayed by the [monitor](#monitor) or [list](#list) commands. This option changes that behavior.
 
 ### --maturity-date=YYYY-MM-DD
 
-Sets the maturity date for the [#new](#new) command when creating a task. Not valid with the `--expire-today` option. This will be the first day the task shows up in basic `task list` output.
+Sets the maturity date for the [new](#new) command when creating a task. Not valid with the `--expire-today` option. This will be the first day the task shows up in basic `task list` output.
 
 AUTHOR
 ======
