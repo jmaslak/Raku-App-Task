@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Task:ver<0.0.15>:auth<cpan:JMASLAK> {
+class App::Tasks::Task:ver<0.0.16>:auth<cpan:JMASLAK> {
     use App::Tasks::TaskBody;
 
     # The key header structures will be stored (potentially) in an index

@@ -4,7 +4,7 @@
 #
 use v6.c;
 
-class App::Tasks:ver<0.0.15>:auth<cpan:JMASLAK> {
+class App::Tasks:ver<0.0.16>:auth<cpan:JMASLAK> {
     use App::Tasks::Config;
     use App::Tasks::Lock;
     use App::Tasks::Task;
