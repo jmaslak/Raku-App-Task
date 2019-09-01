@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Enhance input checking for task list
 
 0.0.15  2019-04-28T13:14:39-06:00
     - [refactor] Adopt new P5localtime interface

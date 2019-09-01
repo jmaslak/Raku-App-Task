@@ -1066,7 +1066,7 @@ class App::Tasks:ver<0.0.15>:auth<cpan:JMASLAK> {
         return @out.join();
     }
 
-    method task-list(
+    multi method task-list(
         Int $num? where { !$num.defined or $num > 0 },
         Bool :$show-immature? is copy = False,
         Bool :$all = True,
@@ -1086,6 +1086,7 @@ class App::Tasks:ver<0.0.15>:auth<cpan:JMASLAK> {
 
         return self.display-with-pager( "Tasklist", $out );
     }
+    multi method task-list( +@ ) { die "Invalid arguments" }
 
     method task-monitor(
         Bool :$show-immature? = False,

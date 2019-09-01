@@ -5,3 +5,6 @@ Tags: feature
 --- 1437537099
 In particular, make sure to validate that the numeric task arguments 
 actually make sense (numbers, no decimal, positive, etc).
+--- 1567306091
+We can have a catch-all multi-method to handle this (see what was done
+with lib/App/Tasks.pm6 task-list()
