@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Rename Git Hub repo to reflect language name
 
 0.0.16  2019-08-31T20:50:19-06:00
     - Enhance input checking for task list
