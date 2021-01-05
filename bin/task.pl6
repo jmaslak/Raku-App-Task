@@ -2,7 +2,7 @@
 use v6.c;
 
 #
-# Copyright © 2018 Joelle Maslak
+# Copyright © 2018,2021 Joelle Maslak
 # All Rights Reserved - See License
 #
 
@@ -340,6 +340,6 @@ Joelle Maslak C<<jmaslak@antelope.net>>
 
 Licensed under the same terms as Perl 6.
 
-Copyright © 2018 by Joelle Maslak
+Copyright © 2018,2021 by Joelle Maslak
 
 =end POD

@@ -33,6 +33,10 @@ method read-tasks(--> Array[App::Tasks::Task:D]) {
 
 # Get task filename list
 method get-task-filenames(-->Array[IO::Path:D]) {
+    if $!data-dir !~~ :d {
+        $*ERR.say("Task directory {$!data-dir} does not exist or is not a directory");
+        exit 1;
+    }
     $!lock.get-lock;
     LEAVE $!lock.release-lock;
 

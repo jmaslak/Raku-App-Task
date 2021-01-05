@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Provide more useful error messages if .task directory doesn't
+      exist
 
 0.0.17  2020-01-18T23:56:03Z
     - Rename Git Hub repo to reflect language name
