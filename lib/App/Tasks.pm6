@@ -893,10 +893,10 @@ class App::Tasks:ver<0.0.19>:auth<cpan:JMASLAK> {
         if ! @lines.elems { return; }
 
         # Eat the header
-        my $first = @lines[0];
+        my $first = @lines[0].trim;
         if $first eq $prompt { @lines.shift; }
         if @lines.elems {
-            my $second = @lines[0];
+            my $second = @lines[0].trim;
             if $second eq '-' x 72 { @lines.shift; }
         }
 

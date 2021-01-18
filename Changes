@@ -1,6 +1,9 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Ignore leading & trailer spaces on header lines when deciding
+      whether or not to remove these lines (justifying the first
+      line in nano will add a space to the end of the header lines)
 
 0.0.19  2021-01-18T13:25:04-07:00
     - Configure nano to word wrap by default (nano >= 3.0 changed
