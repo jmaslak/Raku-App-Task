@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Configure nano to word wrap by default (nano >= 3.0 changed
+      defaults to not automatically word wrap)
 
 0.0.18  2021-01-05T10:19:06-07:00
     - Provide more useful error messages if .task directory doesn't
