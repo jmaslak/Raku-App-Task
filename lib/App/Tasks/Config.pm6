@@ -1,7 +1,7 @@
 use v6.c;
 
 #
-# Copyright © 2018 Joelle Maslak
+# Copyright © 2018-2021 Joelle Maslak
 # All Rights Reserved - See License
 #
 
@@ -25,7 +25,7 @@ class App::Tasks::Config:ver<0.1.0>:auth<zef:jmaslak> {
 
     has SetHash $.ignore-tags               is rw = SetHash.new;
     has Str     $.pager-command             is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
-    has Str     $.editor-command            is rw = 'nano -r 72 -s ispell +3,1 %FILENAME%';
+    has Str     $.editor-command            is rw = 'nano -b -r 72 -s ispell +3,1 %FILENAME%';
 
     method read-config(IO::Path:D $config-file? = $*HOME.add('.task.yaml')) {
         my $contents = '';
@@ -325,7 +325,7 @@ Joelle Maslak C<<jmaslak@antelope.net>>
 
 Licensed under the same terms as Perl 6.
 
-Copyright © 2018 by Joelle Maslak
+Copyright © 2018-2021 by Joelle Maslak
 
 =end POD
 

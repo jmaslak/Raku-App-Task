@@ -1,5 +1,5 @@
 #
-# Copyright © 2015-2018 Joelle Maslak
+# Copyright © 2015-2021 Joelle Maslak
 # All Rights Reserved
 #
 use v6.c;
@@ -893,10 +893,10 @@ class App::Tasks:ver<0.1.0>:auth<zef:jmaslak> {
         if ! @lines.elems { return; }
 
         # Eat the header
-        my $first = @lines[0];
+        my $first = @lines[0].trim;
         if $first eq $prompt { @lines.shift; }
         if @lines.elems {
-            my $second = @lines[0];
+            my $second = @lines[0].trim;
             if $second eq '-' x 72 { @lines.shift; }
         }
 

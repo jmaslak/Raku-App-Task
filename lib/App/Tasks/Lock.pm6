@@ -1,7 +1,7 @@
 use v6.c;
 
 #
-# Copyright © 2018 Joelle Maslak
+# Copyright © 2018,2021 Joelle Maslak
 # All Rights Reserved - See License
 #
 
@@ -20,6 +20,10 @@ class App::Tasks::Lock:ver<0.1.0>:auth<zef:jmaslak> {
     my sub increment-lock(IO::Path:D $lock-file -->Bool:D) {
         $LOCKCNT++;
         if $LOCKCNT == 1 {
+            CATCH {
+                $*ERR.say("Could not grab lock on {$lock-file}");
+                exit 1;
+            }
             $LOCK = $lock-file.open(:a);
             $LOCK.lock;
             return True;
