@@ -4,7 +4,7 @@
 #
 use v6.c;
 
-class App::Tasks:ver<0.0.17>:auth<zef:jmaslak> {
+class App::Tasks:ver<0.1.0>:auth<zef:jmaslak> {
     use App::Tasks::Config;
     use App::Tasks::Lock;
     use App::Tasks::Task;
