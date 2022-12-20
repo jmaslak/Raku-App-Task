@@ -1,10 +1,11 @@
 {
-  "auth" : "zef:jmaslak",
-  "authors" : [
+  "auth": "zef:jmaslak",
+  "authors": [
     "Joelle Maslak"
   ],
-  "build-depends" : [ ],
-  "depends" : [
+  "build-depends": [
+  ],
+  "depends": [
     "Digest::SHA1::Native",
     "File::Temp",
     "NativeCall",
@@ -15,21 +16,24 @@
     "Terminal::ANSIColor",
     "YAMLish"
   ],
-  "description" : "Task Management CLI Appliication",
-  "license" : "Artistic-2.0",
-  "name" : "App::Tasks",
-  "perl" : "6.c",
-  "provides" : {
-    "App::Tasks" : "lib/App/Tasks.pm6",
-    "App::Tasks::Config" : "lib/App/Tasks/Config.pm6",
-    "App::Tasks::Lock" : "lib/App/Tasks/Lock.pm6",
-    "App::Tasks::Task" : "lib/App/Tasks/Task.pm6",
-    "App::Tasks::TaskBody" : "lib/App/Tasks/TaskBody.pm6",
-    "App::Tasks::TaskList" : "lib/App/Tasks/TaskList.pm6"
+  "description": "Task Management CLI Appliication",
+  "license": "Artistic-2.0",
+  "name": "App::Tasks",
+  "perl": "6.c",
+  "provides": {
+    "App::Tasks": "lib/App/Tasks.pm6",
+    "App::Tasks::Config": "lib/App/Tasks/Config.pm6",
+    "App::Tasks::Lock": "lib/App/Tasks/Lock.pm6",
+    "App::Tasks::Task": "lib/App/Tasks/Task.pm6",
+    "App::Tasks::TaskBody": "lib/App/Tasks/TaskBody.pm6",
+    "App::Tasks::TaskList": "lib/App/Tasks/TaskList.pm6"
   },
-  "resources" : [ ],
-  "source-url" : "https://gitlab.antelope.net/antelope/app-task.git",
-  "tags" : [ ],
-  "test-depends" : [ ],
-  "version" : "0.0.17"
+  "resources": [
+  ],
+  "source-url": "https://gitlab.antelope.net/antelope/app-task.git",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.0.17"
 }
