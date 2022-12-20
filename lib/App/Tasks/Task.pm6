@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Task:ver<0.1.0>:auth<zef:jmaslak> {
+class App::Tasks::Task:ver<0.1.1>:auth<zef:jmaslak> {
     use App::Tasks::TaskBody;
 
     # The key header structures will be stored (potentially) in an index
