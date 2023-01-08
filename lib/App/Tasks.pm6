@@ -1128,10 +1128,15 @@ class App::Tasks:ver<0.1.1>:auth<zef:jmaslak> {
             self.update-task-log();    # So we know we've done this.
         }
 
-        my $out = localtime(Scalar) ~ ' local / ' ~ gmtime(Scalar) ~ " UTC\n\n";
+        my $out;
+        my $header-rows = 2;
+        if $.config.monitor.display-time {
+            $out = localtime(Scalar) ~ ' local / ' ~ gmtime(Scalar) ~ " UTC\n\n";
+            $header-rows = 2;
+        }
 
         $out ~= self.generate-task-list(
-            $rows - 3,
+            $rows - 1 - $header-rows,
             $cols - 1,
             :count-immature($show-immature),
             :count-all($all),

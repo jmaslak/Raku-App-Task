@@ -1,31 +1,35 @@
 use v6.c;
 
 #
-# Copyright © 2018-2021 Joelle Maslak
+# Copyright © 2018-2023 Joelle Maslak
 # All Rights Reserved - See License
 #
+
+use App::Tasks::Config::Monitor;
 
 class App::Tasks::Config:ver<0.1.1>:auth<zef:jmaslak> {
 
     use Terminal::ANSIColor;
     use YAMLish;
 
-    has Str     $.body-color                is rw;
-    has Str     $.header-alert-color        is rw;
-    has Str     $.header-normal-color       is rw;
-    has Str     $.header-seperator-color    is rw;
-    has Str     $.header-title-color        is rw;
-    has Str     $.immature-task-color       is rw;
-    has Str     $.not-displayed-today-color is rw;
-    has Str     $.prompt-bold-color         is rw;
-    has Str     $.prompt-color              is rw;
-    has Str     $.prompt-info-color         is rw;
-    has Str     $.tag-color                 is rw;
-    has Str     $.reset                     is rw;
+    has Str       $.body-color                is rw;
+    has Str       $.header-alert-color        is rw;
+    has Str       $.header-normal-color       is rw;
+    has Str       $.header-seperator-color    is rw;
+    has Str       $.header-title-color        is rw;
+    has Str       $.immature-task-color       is rw;
+    has Str       $.not-displayed-today-color is rw;
+    has Str       $.prompt-bold-color         is rw;
+    has Str       $.prompt-color              is rw;
+    has Str       $.prompt-info-color         is rw;
+    has Str       $.tag-color                 is rw;
+    has Str       $.reset                     is rw;
 
-    has SetHash $.ignore-tags               is rw = SetHash.new;
-    has Str     $.pager-command             is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
-    has Str     $.editor-command            is rw = 'nano -b -r 72 -s ispell +3,1 %FILENAME%';
+    has SetHash   $.ignore-tags               is rw = SetHash.new;
+    has Str       $.pager-command             is rw = 'less -RFX -P%PROMPT% -- %FILENAME%';
+    has Str       $.editor-command            is rw = 'nano -b -r 72 -s ispell +3,1 %FILENAME%';
+
+    has Monitor:D $.monitor                   is rw = Monitor.new();
 
     method read-config(IO::Path:D $config-file? = $*HOME.add('.task.yaml')) {
         my $contents = '';
@@ -79,6 +83,10 @@ class App::Tasks::Config:ver<0.1.1>:auth<zef:jmaslak> {
         $obj.ignore-tags               = $y<ignore-tags>:delete.SetHash     if $y<ignore-tags>:exists;
         $obj.pager-command             = $y<pager-command>:delete           if $y<pager-command>:exists;
         $obj.editor-command            = $y<editor-command>:delete          if $y<editor-command>:exists;
+
+        # Process "monitor" section
+        $obj.monitor.process-config($y);
+        $y<monitor>:delete;
 
         if $y.keys.list.elems > 0 {
             die("Unknown configuration keys: " ~ $y.keys);
@@ -280,7 +288,7 @@ This is the escape code to reset text attributes.
 
 =head1 OTHER ATTRIBUTES
 
-=head1 ignore-tags
+=head2 ignore-tags
 
 This is a SetHash containing tags that are, by default, ignored by the C<list>
 and C<monitor> commands.  It is specified in the YAML file as follows:
@@ -291,7 +299,7 @@ and C<monitor> commands.  It is specified in the YAML file as follows:
 
 The above YAML snippet wll define abc and def as "ignored tags".
 
-=head1 editor-command
+=head2 editor-command
 
 This is the command used as for editing and creating task notes.  An occurance
 of C<%FILENAME%> is replaced with a temporary file name (representing the note
@@ -305,7 +313,17 @@ This uses the nano editor, with line wrapping at 72 columns.  It uses ispell
 as the spell checker.  It positions the cursor at the 3rd line, first column
 position.
 
-=head1 pager-command
+=head2 monitor
+
+This contains a C<App::Tasks::Config::Monitor> class, which has the following
+attributes:
+
+=head3 display-time
+
+This value is true if the time time should be displayed using the "montior"
+command.
+
+=head2 pager-command
 
 This is used to display all output that may span more than one page.
 
@@ -325,7 +343,7 @@ Joelle Maslak C<<jmaslak@antelope.net>>
 
 Licensed under the same terms as Perl 6.
 
-Copyright © 2018-2021 by Joelle Maslak
+Copyright © 2018-2023 by Joelle Maslak
 
 =end POD
 

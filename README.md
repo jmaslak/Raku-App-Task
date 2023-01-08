@@ -255,5 +255,5 @@ LEGAL
 
 Licensed under the same terms as Perl 6.
 
-Copyright © 2018-2022 by Joelle Maslak
+Copyright © 2018-2023 by Joelle Maslak
 

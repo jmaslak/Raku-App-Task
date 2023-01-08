@@ -100,5 +100,34 @@ subtest 'ignore-tags', {
     done-testing;
 }
 
+subtest 'display-time', {
+    my ($fn, $fh) = tempfile;
+    $fh.say: "monitor:";
+    $fh.say: "  display-time: No";
+    $fh.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO);
+    is $conf.WHAT, App::Tasks::Config, "Initialized class";
+    my @expected = False;
+    is $conf.monitor.display-time, False, "Do not display time";
+
+    ($fn, $fh) = tempfile;
+    $fh.say: "monitor:";
+    $fh.say: "  display-time: Yes";
+    $fh.close;
+    $conf = App::Tasks::Config.read-config($fn.IO);
+    is $conf.WHAT, App::Tasks::Config, "Initialized class";
+    @expected = False;
+    is $conf.monitor.display-time, True, "Do display time";
+
+    ($fn, $fh) = tempfile;
+    $fh.close;
+    $conf = App::Tasks::Config.read-config($fn.IO);
+    is $conf.WHAT, App::Tasks::Config, "Initialized class";
+    @expected = False;
+    is $conf.monitor.display-time, True, "Do display time (default)";
+
+    done-testing;
+}
+
 done-testing;
 
