@@ -23,6 +23,7 @@
   "provides": {
     "App::Tasks": "lib/App/Tasks.pm6",
     "App::Tasks::Config": "lib/App/Tasks/Config.pm6",
+    "App::Tasks::Config::Monitor": "lib/App/Tasks/Config/Monitor.rakumod",
     "App::Tasks::Lock": "lib/App/Tasks/Lock.pm6",
     "App::Tasks::Task": "lib/App/Tasks/Task.pm6",
     "App::Tasks::TaskBody": "lib/App/Tasks/TaskBody.pm6",
@@ -35,5 +36,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.1.1"
+  "version": "0.2.0"
 }

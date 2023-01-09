@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-unit class App::Tasks::TaskList:ver<0.1.1>:auth<zef:jmaslak>;
+unit class App::Tasks::TaskList:ver<0.2.0>:auth<zef:jmaslak>;
 
 use App::Tasks::Lock;
 use App::Tasks::Task;
