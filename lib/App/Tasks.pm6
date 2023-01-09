@@ -1,5 +1,5 @@
 #
-# Copyright © 2015-2021 Joelle Maslak
+# Copyright © 2015-2023 Joelle Maslak
 # All Rights Reserved
 #
 use v6.c;
@@ -88,8 +88,8 @@ my multi sub trait_mod:<is>(Routine $r, :$locking) {
         my $ret;
         my $exception;
         try {
-            $ret = callsame;
-            CATCH { $exception = $_; .resume }
+            $ret := callsame;
+            CATCH { $exception = $_ }
         }
 
         $self.remove-lock();
@@ -1132,7 +1132,7 @@ method coalesce-tasks() is locking {
             my $new = $orig.parent.add($newname);
 
             move $orig, $new;
-            @!TASKS = Array.new();  # Clear cache
+            @!TASKS = Array.new;  # Clear cache
             $i++;
         } elsif $i == $num {
             $i++;
