@@ -12,8 +12,8 @@
     "P5getpriority",
     "P5localtime",
     "Term::termios",
-    "Term::ReadKey",
     "Terminal::ANSIColor",
+    "Terminal::ReadKey",
     "YAMLish"
   ],
   "description": "Task Management CLI Appliication",

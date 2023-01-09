@@ -17,8 +17,8 @@ use NativeCall;
 use P5getpriority;
 use P5localtime;
 use Term::termios;
-use Term::ReadKey;
 use Terminal::ANSIColor;
+use Terminal::ReadKey;
 
 my $P1         = '[task]';
 my $P2         = '> ';
@@ -1059,15 +1059,20 @@ method task-monitor(
 
     react {
         whenever key-pressed(:!echo) -> $c {
-            say $.config.reset;
-            say "";
-            say "Exiting.";
-            done;
+            if $c eq "Ctrl L" {
+                self.task-monitor-show(:$show-immature, :$all, :$tag, :force);
+            } else {
+                say $.config.reset;
+                say "";
+                say "Exiting.";
+                done;
+            }
         }
         whenever Supply.interval(1) {
             self.task-monitor-show(:$show-immature, :$all, :$tag);
         }
     }
+    sleep 1;
 }
 
 method task-monitor-show(
@@ -1098,7 +1103,7 @@ method task-monitor-show(
         :count-all($all),
         :$tag,
     );
-    if $out ne $last {
+    if $out ne $last or $force {
         $last = $out;
         self.update-task-log();
         self.clear;

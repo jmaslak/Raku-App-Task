@@ -6,6 +6,7 @@ Revision history for App-Tasks
       time is no longer displayed with "task monitor" output.
     - [bugfix] Do not redraw screen when nothing has changed in
       "monitor"
+    - In "monitor" mode, ctrl-l will redraw the screen
 
 0.1.1  2022-12-20T16:33:00Z
     - Ignore leading & trailer spaces on header lines when deciding
