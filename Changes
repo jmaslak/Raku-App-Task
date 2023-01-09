@@ -4,6 +4,8 @@ Revision history for App-Tasks
     - Add "monitor" section to YAML config file, with one parameter,
       "display-time".  Default is "Yes", but if "No" is specified,
       time is no longer displayed with "task monitor" output.
+    - [bugfix] Do not redraw screen when nothing has changed in
+      "monitor"
 
 0.1.1  2022-12-20T16:33:00Z
     - Ignore leading & trailer spaces on header lines when deciding
