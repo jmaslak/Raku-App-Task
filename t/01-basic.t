@@ -18,7 +18,7 @@ class MockInFH {
 sub tests {
     my $tmpdir = tempdir.IO;    # Get IO::Path object for tmpdir.
     my $cwd = $*CWD;
-    say $*CWD;
+    say "CWD: {$*CWD.Str}";
 
     my $task = App::Tasks.new( :data-dir($tmpdir), :config(App::Tasks::Config.no-color) );
 
