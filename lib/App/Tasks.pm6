@@ -911,7 +911,8 @@ method task-close(
         say "Can't close task - task numbers may have changed since last 'task list'";
         return;
     }
-    
+   
+    say "Here"; 
     if ! $!tasks.exists($tasknum) {
         $*ERR.say("Could not locate task number $tasknum");
         return;
@@ -1060,6 +1061,7 @@ method task-monitor(
     react {
         whenever key-pressed(:!echo) -> $c {
             if $c eq "Ctrl L" {
+                Thread.yield;
                 self.task-monitor-show(:$show-immature, :$all, :$tag, :force);
             } else {
                 say $.config.reset;
@@ -1215,12 +1217,16 @@ method get-taskhash() is locking {
 }
 
 method get-ttyname() {
+    state $result;
+    return $result with $result;
+
     my $tty = getppid() ~ ':';
     if self.isatty() {
         $tty ~= ttyname(0);
     }
 
-    return $tty;
+    $result = $tty;
+    return $result;
 }
 
 method menu-prompt($prompt, @choices) {

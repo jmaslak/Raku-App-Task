@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [bugfix] Avoid "monitor" deadlock
 
 0.2.0  2023-01-08T22:47:44-07:00
     - Add "monitor" section to YAML config file, with one parameter,
