@@ -7,7 +7,7 @@ use v6.c;
 
 use App::Tasks::Config::Monitor;
 
-class App::Tasks::Config:ver<0.2.0>:auth<zef:jmaslak> {
+class App::Tasks::Config:ver<0.2.1>:auth<zef:jmaslak> {
 
     use Terminal::ANSIColor;
     use YAMLish;

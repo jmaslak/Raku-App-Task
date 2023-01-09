@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.2.1  2023-01-08T23:17:05-07:00
     - [bugfix] Avoid "monitor" deadlock
 
 0.2.0  2023-01-08T22:47:44-07:00
