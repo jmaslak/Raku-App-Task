@@ -1,7 +1,7 @@
 use v6.c;
 
 #
-# Copyright © 2018 Joelle Maslak
+# Copyright © 2018-2023 Joelle Maslak
 # All Rights Reserved - See License
 #
 
@@ -38,8 +38,6 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     has Int:D      $.task-id = new-task-id;
     has Int:D      $.version = 2;
     has Int        $.display-frequency;                         # In Index
-
-    has Bool:D     $.complete = True;   # Indicates complete file loaded
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
