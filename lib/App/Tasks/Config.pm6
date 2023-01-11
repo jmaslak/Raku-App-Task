@@ -6,6 +6,7 @@ use v6.c;
 #
 
 use App::Tasks::Config::Monitor;
+use App::Tasks::Config::Trello;
 
 class App::Tasks::Config:ver<0.2.1>:auth<zef:jmaslak> {
 
@@ -30,6 +31,7 @@ class App::Tasks::Config:ver<0.2.1>:auth<zef:jmaslak> {
     has Str       $.editor-command            is rw = 'nano -b -r 72 -s ispell +3,1 %FILENAME%';
 
     has Monitor:D $.monitor                   is rw = Monitor.new();
+    has Trello:D  $.trello                    is rw = Trello.new();
 
     method read-config(IO::Path:D $config-file? = $*HOME.add('.task.yaml')) {
         my $contents = '';
@@ -87,6 +89,10 @@ class App::Tasks::Config:ver<0.2.1>:auth<zef:jmaslak> {
         # Process "monitor" section
         $obj.monitor.process-config($y);
         $y<monitor>:delete;
+
+        # Process "trello" section
+        $obj.trello.process-config($y);
+        $y<trello>:delete;
 
         if $y.keys.list.elems > 0 {
             die("Unknown configuration keys: " ~ $y.keys);
@@ -334,6 +340,19 @@ scroll to the next page.
 The default value is:
 
   less -RFX -P%PROMPT% -- %FILENAME%
+
+=head2 trello
+
+This contains a C<App::Tasks::Config::Trello> class, which has the following
+attributes:
+
+=head3 api-key
+
+The value, if set, of the API key used to connect to Trello.
+
+=head3 token
+
+The value, if set, of the token used to connect to Trello.
 
 =head1 AUTHOR
 

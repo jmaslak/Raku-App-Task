@@ -129,5 +129,28 @@ subtest 'display-time', {
     done-testing;
 }
 
+subtest 'trello', {
+    my ($fn, $fh) = tempfile;
+    $fh.say: "trello:";
+    $fh.say: "  api-key: \"foo\"";
+    $fh.say: "  token: \"bar\"";
+    $fh.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO);
+    is $conf.WHAT, App::Tasks::Config, "Initialized class";
+    my @expected = False;
+    is $conf.trello.api-key, "foo", "Trello API key set";
+    is $conf.trello.token, "bar", "Trello token set";
+
+    ($fn, $fh) = tempfile;
+    $fh.close;
+    $conf = App::Tasks::Config.read-config($fn.IO);
+    is $conf.WHAT, App::Tasks::Config, "Initialized class";
+    @expected = False;
+    is $conf.trello.api-key, Str, "Trello API key not set";
+    is $conf.trello.token, Str, "Trello token not set";
+
+    done-testing;
+}
+
 done-testing;
 

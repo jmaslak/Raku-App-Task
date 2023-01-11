@@ -12,8 +12,13 @@ class App::Tasks::Config::Monitor:ver<0.2.1>:auth<zef:jmaslak> is export {
     method process-config(%config) {
         if %config<monitor><display-time>:exists {
             $.display-time = %config<monitor><display-time>;
+            %config<monitor>:delete;
         } else {
             $.display-time = True;
+        }
+
+        if %config<monitor>.keys.list.elems > 0 {
+            die("Unknown configuration keys: monitor/" ~ %config<monitor>.keys);
         }
     }
 };
@@ -50,7 +55,7 @@ This module will parse the C<monitor> section of the configuration YAML file.
   $monitor->process-config(%config);
 
 This method takes a hash which represents the parsed YAML configuration file.
-It will process the C<montitor> section of that configuration file.
+It will process the C<monitor> section of that configuration file.
 
 
 =head1 ATTRIBUTES
