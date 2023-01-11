@@ -6,6 +6,7 @@
   "build-depends": [
   ],
   "depends": [
+    "Cro",
     "Digest::SHA1::Native",
     "File::Temp",
     "NativeCall",
@@ -14,6 +15,7 @@
     "Term::termios",
     "Terminal::ANSIColor",
     "Terminal::ReadKey",
+    "URI::Encode",
     "YAMLish"
   ],
   "description": "Task Management CLI Appliication",

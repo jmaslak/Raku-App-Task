@@ -1,0 +1,94 @@
+use v6.d;
+use Test;
+
+#
+# Copyright (C) 2023 Joelle Maslak
+# All Rights Reserved - See License
+#
+
+use App::Tasks::Trello;
+use Cro::HTTP::Server;
+use Cro::HTTP::Router;
+
+my $port = setup-listener();
+my $url = "http://localhost:$port/";
+
+my $trello = App::Tasks::Trello.new(
+    api-key  => "mykey",
+    token    => "mytoken",
+    base-url => $url,
+);
+
+
+subtest 'get_boards', {
+    my $boards = $trello.get_boards();
+
+    is $boards.elems, 2, "Proper number of elements";
+    is $boards[1]<id>, "5b689b3228998cf3f01c629e", "Proper ID";
+
+    done-testing;
+}
+
+done-testing;
+
+# Basically a copy of Cro::TCP::Listener, but doesn't bother with
+# allowing nodelay to be set and grabs the port number with a nest of
+# tap and supplier.
+class NuListener does Cro::Source {
+    has Str $.host = 'localhost';
+    has Cro::Port $.port is required;
+
+    method produces() { Cro::TCP::ServerConnection }
+
+    method incoming() {
+        my $listen-socket = IO::Socket::Async.listen($!host, $!port);
+        my $supplier = Supplier::Preserving.new();
+        my $tap = $listen-socket.tap( { $supplier.emit($_) } );
+        $!port = $tap.socket-port.result;
+
+        supply {
+            whenever $supplier.Supply() -> $socket {
+                emit Cro::TCP::ServerConnection.new(:$socket);
+            }
+        }
+    }
+}
+
+# Sample services
+sub setup-listener() {
+    my $application = route {
+        get -> '1', 'members', 'me', 'boards', :$key!, :$token! {
+            if $key ne 'mykey' or $token ne 'mytoken' {
+                forbidden;
+            } else {
+                my $data =
+                    [
+                        {
+                             name => "Greatest Product Roadmap",
+                             id   => "5b6893f01cb3228998cf629e",
+                             url  => "https://trello.com/b/Fqd6NosI/greatest-product-roadmap",
+                         },
+                         {
+                             name => "Never ending Backlog",
+                             id   => "5b689b3228998cf3f01c629e",
+                             url  => "https://trello.com/b/pLu77kV7/neverending-backlog",
+                         },
+                     ];
+                content 'application/json', $data;
+            }
+        }
+    }
+
+    my Cro::Service $service = Cro::HTTP::Server.new(
+        :host('localhost'), :port(0), :$application
+    );
+
+    # Swap out the TCP component...
+    $service.components[0] = NuListener.new(:host('localhost'), :port(0));
+
+    $service.start;
+    my $ephemeral-port = $service.components[0].port;
+
+    return $ephemeral-port;
+}
+
