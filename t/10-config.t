@@ -12,7 +12,9 @@ subtest 'basic-dark', {
     $fh.say: "immature-task-color: 'bold red'";
     $fh.close;
 
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
 
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     is $conf.body-color, color('reset yellow'), "Body color is proper";
@@ -26,7 +28,9 @@ subtest 'basic-light', {
     $fh.say: "theme: light";
     $fh.close;
 
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
 
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     is $conf.body-color, color('reset 94'), "Body color is proper";
@@ -39,7 +43,9 @@ subtest 'basic-none', {
     $fh.say: "theme: 'no-color'";
     $fh.close;
 
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
 
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     is $conf.body-color, '', "Body color is proper";
@@ -51,7 +57,9 @@ subtest 'empty', {
     my ($fn, $fh) = tempfile;
     $fh.close;
 
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
 
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     is $conf.body-color, color('reset yellow'), "Body color is proper";
@@ -62,7 +70,9 @@ subtest 'empty', {
 subtest 'none', {
     my $fn = '/does/not/really/exist/at/all/anywhere/i/hope';
 
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
 
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     is $conf.body-color, color('reset yellow'), "Body color is proper";
@@ -77,7 +87,9 @@ subtest 'editor-pager', {
     $fh.say: "pager-command:  'bar %PROMPT% %FILENAME%'";
     $fh.close;
 
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
 
     is $conf.editor-command, 'foo %FILENAME%', 'pager command';
     is $conf.pager-command, 'bar %PROMPT% %FILENAME%', 'prompt command';
@@ -90,7 +102,9 @@ subtest 'ignore-tags', {
     $fh.say: " - def";
     $fh.close;
 
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
 
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
 
@@ -105,7 +119,11 @@ subtest 'display-time', {
     $fh.say: "monitor:";
     $fh.say: "  display-time: No";
     $fh.close;
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+    
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
+
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     my @expected = False;
     is $conf.monitor.display-time, False, "Do not display time";
@@ -114,14 +132,22 @@ subtest 'display-time', {
     $fh.say: "monitor:";
     $fh.say: "  display-time: Yes";
     $fh.close;
-    $conf = App::Tasks::Config.read-config($fn.IO);
+
+    ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
+
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     @expected = False;
     is $conf.monitor.display-time, True, "Do display time";
 
     ($fn, $fh) = tempfile;
     $fh.close;
-    $conf = App::Tasks::Config.read-config($fn.IO);
+    
+    ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
+
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     @expected = False;
     is $conf.monitor.display-time, True, "Do display time (default)";
@@ -135,7 +161,11 @@ subtest 'trello', {
     $fh.say: "  api-key: \"foo\"";
     $fh.say: "  token: \"bar\"";
     $fh.close;
-    my $conf = App::Tasks::Config.read-config($fn.IO);
+
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
+
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     my @expected = False;
     is $conf.trello.api-key, "foo", "Trello API key set";
@@ -143,7 +173,11 @@ subtest 'trello', {
 
     ($fn, $fh) = tempfile;
     $fh.close;
-    $conf = App::Tasks::Config.read-config($fn.IO);
+
+    ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
+
     is $conf.WHAT, App::Tasks::Config, "Initialized class";
     @expected = False;
     is $conf.trello.api-key, Str, "Trello API key not set";
