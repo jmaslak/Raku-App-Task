@@ -8,7 +8,7 @@ use v6.c;
 use App::Tasks::Config::Monitor;
 use App::Tasks::Config::Trello;
 
-class App::Tasks::Config:ver<0.2.1>:auth<zef:jmaslak> {
+class App::Tasks::Config:ver<0.3.0>:auth<zef:jmaslak> {
 
     use Hash::Merge;
     use Terminal::ANSIColor;

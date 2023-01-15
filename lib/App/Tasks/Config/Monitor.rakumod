@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Config::Monitor:ver<0.2.1>:auth<zef:jmaslak> is export {
+class App::Tasks::Config::Monitor:ver<0.3.0>:auth<zef:jmaslak> is export {
 
     has Bool:D $.display-time is rw = True;
 

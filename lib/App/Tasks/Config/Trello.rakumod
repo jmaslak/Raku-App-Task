@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Config::Trello:ver<0.2.1>:auth<zef:jmaslak> is export {
+class App::Tasks::Config::Trello:ver<0.3.0>:auth<zef:jmaslak> is export {
 
     has Str    $.api-key  is rw;
     has Str    $.token    is rw;

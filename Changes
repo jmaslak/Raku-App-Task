@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.3.0  2023-01-15T11:45:37-07:00
     - Initial Trello syncronization (one-way)
     - [bugfix] Config file reader now tests for readability rather than
       existance of config files.
