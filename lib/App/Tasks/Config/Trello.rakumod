@@ -29,7 +29,6 @@ class App::Tasks::Config::Trello:ver<0.2.1>:auth<zef:jmaslak> is export {
                 $!tasks{$board} = {};
                 for %config<trello><tasks>{$board}.keys -> $list {
                     $!tasks{$board}{$list} = %config<trello><tasks>{$board}{$list};
-                    dd $!tasks;
                 }
             }
             %config<trello><tasks>:delete;
