@@ -7,17 +7,32 @@ use v6.c;
 
 class App::Tasks::Config::Trello:ver<0.2.1>:auth<zef:jmaslak> is export {
 
-    has Str $.api-key is rw;
-    has Str $.token   is rw;
+    has Str    $.api-key is rw;
+    has Str    $.token   is rw;
+    has Hash:D $.tasks   is rw = {};
 
     method process-config(%config) {
         if %config<trello><api-key>:exists {
-            $.api-key = %config<trello><api-key>;
+            $!api-key = %config<trello><api-key>;
             %config<trello><api-key>:delete;
         }
         if %config<trello><token>:exists {
-            $.token = %config<trello><token>;
+            $!token = %config<trello><token>;
             %config<trello><token>:delete;
+        }
+
+        # We do this so that if the config file is malformed, it shows
+        # up as an error.
+        if %config<trello><tasks>:exists {
+            $!tasks = {}
+            for %config<trello><tasks>.keys -> $board {
+                $!tasks{$board} = {};
+                for %config<trello><tasks>{$board}.keys -> $list {
+                    $!tasks{$board}{$list} = %config<trello><tasks>{$board}{$list};
+                    dd $!tasks;
+                }
+            }
+            %config<trello><tasks>:delete;
         }
 
         if %config<trello>.keys.list.elems > 0 {
@@ -48,8 +63,15 @@ module is intended to be instantiated only via C<App::Tasks::Config>.
  trello: 
    api-key: "0123456789abcdef"
    token: "fedcba9876543210"
+   tasks: 
+    board1:
+     list1: "tag1"
 
 This module will parse the C<trello> section of the configuration YAML file.
+
+The api-key and token are self-explanatory, while the boards section contains
+a hash of boards, which contain a hash of lists to consider as
+tasks.  Each list has a tag that can be associated with it.
 
 =head1 CLASS METHODS
 
@@ -71,6 +93,13 @@ The value, if set, of the API key used to connect to Trello.
 =head2 token
 
 The value, if set, of the token used to connect to Trello.
+
+=head2 tasks
+
+A hash of hashes, indicating boards with lists that have tasks.  The top hash
+contains the boards, with the next level being the lists that are interesting
+in those boards.  The final level is the tag to assign to tasks from that
+board.
 
 =head1 AUTHOR
 

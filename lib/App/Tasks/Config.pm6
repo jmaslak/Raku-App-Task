@@ -245,10 +245,11 @@ You can also
 
 =head2 from-string
 
-  my $config = App::Tasks::Config.from-file($config-text);
+  my $config = App::Tasks::Config.from-file($config-text, $secret-text?);
 
-This method takes a string and parses it as YAML, for the attributes listed
-below.
+This method takes two strings and parses them as YAML, for the attributes listed
+below.  They are processed independently, but combined together using
+C<Hash::Merge>.
 
 =head2 no-color
 
@@ -286,7 +287,7 @@ This is the escape codes for the header normal text.
 This is the escape codes for immature tasks in the main task list (when
 display of either all tasks or immature tasks is enabled).
 
-=head2 not-displayed-today-coloor
+=head2 not-displayed-today-color
 
 This is the escape codes for tasks that have a frequency that would normally
 prevent them from being displayed in the main task list (only applicable when
@@ -373,6 +374,13 @@ The value, if set, of the API key used to connect to Trello.
 =head3 token
 
 The value, if set, of the token used to connect to Trello.
+
+=head3 tasks
+
+A hash of hashes, indicating boards with lists that have tasks.  The top hash
+contains the boards, with the next level being the lists that are interesting
+in those boards.  The final level is the tag to assign to tasks from that
+board.
 
 =head1 AUTHOR
 

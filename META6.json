@@ -31,7 +31,8 @@
     "App::Tasks::Lock": "lib/App/Tasks/Lock.pm6",
     "App::Tasks::Task": "lib/App/Tasks/Task.pm6",
     "App::Tasks::TaskBody": "lib/App/Tasks/TaskBody.pm6",
-    "App::Tasks::TaskList": "lib/App/Tasks/TaskList.pm6"
+    "App::Tasks::TaskList": "lib/App/Tasks/TaskList.pm6",
+    "App::Tasks::Trello": "lib/App/Tasks/Trello.rakumod"
   },
   "resources": [
   ],

@@ -186,4 +186,3 @@ sub setup-listener() {
 
     return $ephemeral-port;
 }
-

@@ -160,6 +160,9 @@ subtest 'trello', {
     $fh.say: "trello:";
     $fh.say: "  api-key: \"foo\"";
     $fh.say: "  token: \"bar\"";
+    $fh.say: "  tasks:";
+    $fh.say: "    \"board 1\":";
+    $fh.say: "      list1: \"tag1\"";
     $fh.close;
 
     my ($fn2, $fh2) = tempfile;
@@ -170,6 +173,7 @@ subtest 'trello', {
     my @expected = False;
     is $conf.trello.api-key, "foo", "Trello API key set";
     is $conf.trello.token, "bar", "Trello token set";
+    is $conf.trello.tasks{"board 1"}<list1>, "tag1", "Board+list tag set";
 
     ($fn, $fh) = tempfile;
     $fh.close;
@@ -182,6 +186,7 @@ subtest 'trello', {
     @expected = False;
     is $conf.trello.api-key, Str, "Trello API key not set";
     is $conf.trello.token, Str, "Trello token not set";
+    is $conf.trello.tasks, {}, "Trello tasks not set";
 
     done-testing;
 }
