@@ -36,7 +36,7 @@
   },
   "resources": [
   ],
-  "source-url": "https://gitlab.antelope.net/antelope/app-task.git",
+  "source-url": "https://github.com/jmaslak/app-task.git",
   "tags": [
   ],
   "test-depends": [
