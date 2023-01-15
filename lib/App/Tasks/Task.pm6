@@ -8,36 +8,21 @@ use v6.c;
 class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     use App::Tasks::TaskBody;
 
-    # The key header structures will be stored (potentially) in an index
-    # file.
-    #
-    # These include:
-    #   task-number
-    #   file
-    #   created
-    #   expires
-    #   not-before
-    #   display-frequency
-    #   tags (set of strings)
-    #   title
-    #
-    # All other fields may or may not be present in this structure at
-    # any point in time.
-
     subset Tag of Str where { !$^a.defined or $^a ~~ /^ \S+ $/ };
 
-    has Int:D      $.task-number is required;                   # In Index
+    has Int:D      $.task-number is required;
     has IO::Path:D $.data-dir    is required;
-    has IO::Path   $.file;                                      # In Index
-    has Str:D      $.title       is required;                   # In Index
-    has DateTime:D $.created     is required;                   # In Index
-    has Date       $.expires;                                   # In Index
-    has Date       $.not-before;  # Hide before this date       # In Index
-    has SetHash:D  $.tags = SetHash.new;                        # In Index
+    has IO::Path   $.file;
+    has Str:D      $.title       is required;
+    has DateTime:D $.created     is required;
+    has Date       $.expires;
+    has Date       $.not-before;  # Hide before this date
+    has SetHash:D  $.tags = SetHash.new;
     has Array:D    $.body = Array[App::Tasks::TaskBody].new;
     has Int:D      $.task-id = new-task-id;
     has Int:D      $.version = 2;
-    has Int        $.display-frequency;                         # In Index
+    has Int        $.display-frequency;
+    has Str        $.trello-id;
 
     # Read a file to build a new task object
     method from-file(IO::Path:D $data-dir, Int:D $task-number -->App::Tasks::Task:D) {
@@ -176,6 +161,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     # Add a task note to this object
     method add-note(Str:D $text) {
         self.refresh-task;
+        die "Cannot edit a task which is on Trello" if self.trello-id.defined;
 
         my $note-text = S/\n $// given $text;
 
@@ -186,6 +172,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     # Update title
     method change-title(Str:D $text) {
         self.refresh-task;
+        die "Cannot edit a task which is on Trello" if self.trello-id.defined;
 
         $!title = $text;
     }
@@ -193,6 +180,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     # Update Expiration
     method change-expiration(Date $day) {
         self.refresh-task;
+        die "Cannot edit a task which is on Trello" if self.trello-id.defined;
 
         $!expires = $day;
     }
@@ -200,6 +188,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     # Update Not-Before
     method change-not-before(Date $day) {
         self.refresh-task;
+        die "Cannot edit a task which is on Trello" if self.trello-id.defined;
 
         $!not-before = $day;
     }
@@ -207,16 +196,21 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     # Update tags
     method add-tag(Tag:D $tag) {
         self.refresh-task;
+        die "Cannot edit a task which is on Trello" if self.trello-id.defined;
+
         $!tags{$tag} = True;
     }
     method remove-tag(Tag:D $tag) {
         self.refresh-task;
+        die "Cannot edit a task which is on Trello" if self.trello-id.defined;
+
         $!tags{$tag} = False;
     }
 
     # Update Display-Frequency
     method change-display-frequency(Int:D $frequency where * ≥ 0) {
         self.refresh-task;
+        die "Cannot edit a task which is on Trello" if self.trello-id.defined;
 
         $!display-frequency = $frequency;
     }
@@ -230,6 +224,13 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
         } else {
             return False;
         }
+    }
+
+    # Update the trello ID
+    method update-trello-id(Str $trello-id) {
+        self.refresh-task;
+
+        $!trello-id = $trello-id;
     }
 
     # Check Frequency
@@ -258,7 +259,8 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
     }
 
     # Method to create a message-id
-    # This will be unique-enough for our purposes, but we should 
+    # This will be unique-enough for our purposes, but we should perhaps
+    # ensure uniqueness.
     our sub new-task-id(-->Int:D) {
         my $date = DateTime.now;
         my $posix = $date.posix;

@@ -67,6 +67,10 @@ sub tests {
     is @rand.elems, @rand.unique.elems, "No duplications of TaskIDs";
 
     is $task.get-lock-count, 0, "Lock count is 0";
+
+    $one.update-trello-id('trello id');
+    dies-ok { $one.add_note("Note") }, "Can't add a note to a Trello task";
+
     done-testing;
 }
 
