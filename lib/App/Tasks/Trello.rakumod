@@ -15,6 +15,8 @@ has Str:D $.api-key  is required is rw;
 has Str:D $.token    is required is rw;
 has Str:D $.base-url             is rw = "https://trello.com/";
 
+has Hash  $!boards;   # Cache of board names --> ID
+
 method uri-key()   { "key={uri_encode_component($!api-key)}" }
 method uri-token() { "token={uri_encode_component($!token)}" }
 method me()        { "members/me"                            }
@@ -53,5 +55,18 @@ method get_cards(Str:D :$board, :@fields=("name",)) {
     my $json = await $resp.body;
 
     return $json;
+}
+
+method get_board_id_by_name(Str:D $name) {
+    if ! $!boards.defined {
+        my $boardlist = self.get_boards();
+        for $boardlist<> -> $board {
+            die "Cannot handle duplicate board names in Trello" if $!boards{$board<name>}:exists;
+            $!boards{$board<name>} = $board<id>;
+        }
+    }
+
+    die "Board name does not exist on trello" unless $!boards{$name}:exists;
+    return $!boards{$name};
 }
 

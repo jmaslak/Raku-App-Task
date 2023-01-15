@@ -10,6 +10,7 @@ use App::Tasks::Config;
 use App::Tasks::Lock;
 use App::Tasks::Task;
 use App::Tasks::TaskList;
+use App::Tasks::Trello;
 
 use Digest::SHA1::Native;
 use File::Temp;
@@ -241,6 +242,7 @@ method start(
         when 'set-frequency' { self.task-set-frequency(|@args) }
         when 'add-tag' { self.task-add-tag(|@args) }
         when 'remove-tag' { self.task-remove-tag(|@args) }
+        when 'trello-sync' { self.task-trello-sync(|@args) }
         default {
             say "WRONG USAGE";
         }
@@ -671,6 +673,68 @@ method task-remove-tag(
     $tag     //= self.ask-for-tag;
 
     return self.remove-tag($tasknum, $tag);
+}
+
+# Tested
+method task-trello-sync() is locking {
+    die "Must provide Trello API key in config file" unless $!config.trello.api-key:defined;
+    die "Must provide Trello token in config file" unless $!config.trello.token:defined;
+
+    self.read-tasks;
+
+    my $trello = App::Tasks::Trello.new(
+        api-key => $!config.trello.api-key,
+        token   => $!config.trello.token,
+    );
+    $trello.base-url = $!config.trello.base-url if $!config.trello.base-url:defined;
+   
+    for $!config.trello.tasks.pairs -> $board {
+        my $board-id = $trello.get_board_id_by_name($board.key);
+        my $trello-lists = $trello.get_lists(:board($board-id));
+
+        my $board-cards = $trello.get_cards(
+            :board($board-id),
+            :fields("name", "idList")
+        );
+        for $board.value.pairs -> $list {
+            my $list-id = $trello-lists.first( { $^a<name> eq $list.key } )<id>;
+
+            my %trello-cards;
+            for $board-cards<> -> $card {
+                %trello-cards{$card<id>} = $card if $card<idList> eq $list-id;
+            }
+
+            my %task-items;
+            for @!TASKS.pairs -> $task {
+                if $task.value.trello-id:defined and $list.value ∈ $task.value.tags {
+                    %task-items{$task.value.trello-id} = $task.key;
+                }
+            }
+
+            # In Trello but NOT in our task list
+            for (%trello-cards.keys (-) %task-items.keys) -> $trello-id {
+                my $task = App::Tasks::Task.new(
+                    :task-number(self.get-next-sequence),
+                    :data-dir($!tasks.data-dir),
+                    :title(%trello-cards{$trello-id.key}<name>),
+                    :created(DateTime.now),
+                    :tags([$list.value].SetHash),
+                    :trello-id($trello-id.key),
+                );
+                $task.to-file;
+                @!TASKS.push($task);
+            }
+
+            # In our task list, but NOT in Trello
+            # my @deletes = (%task-items.keys (-) %trello-cards.keys).map: {$^a.key};
+            for (%task-items.keys (-) %trello-cards.keys) -> $trello-id {
+                my $task = @!TASKS[%task-items{$trello-id.key}];
+                unlink self.get-task-filename($task.task-number);
+            }
+        }
+    }
+    @!TASKS = Array.new;
+    self.coalesce-tasks();
 }
 
 # Tested

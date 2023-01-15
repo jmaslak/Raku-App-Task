@@ -313,6 +313,26 @@ after using this.
 You must have done a L<#list> in the current window before you can make notes,
 in case the task numbers have changed.
 
+=head3 trello-sync
+
+If a c<trello> section of the config file is created, which looks something
+like the following, sync with Trello:
+
+  trello:
+    api-key: abcdef0123456789
+    token: 9876543210fedcba
+    tasks:
+      Board1:
+        List1: tag1
+
+In this case, the API key and token are created as a Trello power-up (you must
+do that for your own sync to work). This specifies that cards in Board1's
+list, "List1", will be syncronized and given a tag of "tag1" in C<App::Tasks>.
+
+Note this is a one-way sync (it creates tasks from Trello that can't be edited,
+and those tasks are deleted when the associated Trello card is deleted/moved and
+the sync is re-run.
+
 =head2 OPTIONS
 
 =head3 --expire-today

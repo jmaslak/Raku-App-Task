@@ -37,6 +37,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
         my SetHash  $tags = SetHash.new;
         my Int      $task-id;
         my Int      $display-frequency;
+        my Str      $trello-id;
 
         # Headers
         while (@lines) {
@@ -60,6 +61,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
                 when 'tags'              { $tags              = $value.comb( /\S+/ ).SetHash }
                 when 'task-id'           { $task-id           = $value.Int }
                 when 'display-frequency' { $display-frequency = $value.Int }
+                when 'trello-id'         { $trello-id         = $value }
                 default           { die("Unknown header: $field") }
             }
         }
@@ -104,6 +106,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
             :expires($expires),
             :not-before($not-before),
             :display-frequency($display-frequency),
+            :trello-id($trello-id),
             :tags($tags),
             :task-id($task-id),
             :body(@body),
@@ -148,6 +151,7 @@ class App::Tasks::Task:ver<0.2.1>:auth<zef:jmaslak> {
         $fh.say: "Tags: ",              self.tags.keys.join(' ') if self.tags.elems;
         $fh.say: "Not-Before: ",        self.not-before          if self.not-before.defined;
         $fh.say: "Display-Frequency: ", self.display-frequency   if self.display-frequency.defined;
+        $fh.say: "Trello-ID: ",         self.trello-id            if self.trello-id.defined;
 
         # Body
         for self.body -> $body {

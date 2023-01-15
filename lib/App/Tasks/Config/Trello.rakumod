@@ -7,9 +7,10 @@ use v6.c;
 
 class App::Tasks::Config::Trello:ver<0.2.1>:auth<zef:jmaslak> is export {
 
-    has Str    $.api-key is rw;
-    has Str    $.token   is rw;
-    has Hash:D $.tasks   is rw = {};
+    has Str    $.api-key  is rw;
+    has Str    $.token    is rw;
+    has Hash:D $.tasks    is rw = {};
+    has Str    $.base-url is rw;
 
     method process-config(%config) {
         if %config<trello><api-key>:exists {
@@ -19,6 +20,10 @@ class App::Tasks::Config::Trello:ver<0.2.1>:auth<zef:jmaslak> is export {
         if %config<trello><token>:exists {
             $!token = %config<trello><token>;
             %config<trello><token>:delete;
+        }
+        if %config<trello><base-url>:exists {
+            $!base-url = %config<trello><base-url>;
+            %config<trello><base-url>:delete;
         }
 
         # We do this so that if the config file is malformed, it shows
@@ -99,6 +104,11 @@ A hash of hashes, indicating boards with lists that have tasks.  The top hash
 contains the boards, with the next level being the lists that are interesting
 in those boards.  The final level is the tag to assign to tasks from that
 board.
+
+=head2 base-url
+
+The Trello base URL (normally "https://trello.com/").  This is primarily used
+for testing.
 
 =head1 AUTHOR
 

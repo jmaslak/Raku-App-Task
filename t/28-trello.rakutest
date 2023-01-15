@@ -6,9 +6,12 @@ use Test;
 # All Rights Reserved - See License
 #
 
+use App::Tasks;
+use App::Tasks::Config;
 use App::Tasks::Trello;
 use Cro::HTTP::Server;
 use Cro::HTTP::Router;
+use File::Temp;
 
 my $port = setup-listener();
 my $url = "http://localhost:$port/";
@@ -37,16 +40,22 @@ subtest 'get_boards', {
     done-testing;
 }
 
+subtest 'get_board_id_by_name', {
+    my $id = $trello.get_board_id_by_name('Never ending Backlog');
+    is $id, "5b689b3228998cf3f01c629e", "Proper ID";
+    dies-ok {$trello.get_board_id_by_name('foo')}, "Invalid board name dies";
+}
+
 subtest 'get_lists', {
     my $boards = $trello.get_lists(board => "5b689b3228998cf3f01c629e");
     is $boards.elems, 1, "Proper number of elements (1)";
-    is $boards[0]<id>, "abc123", "Proper ID (1)";
+    is $boards[0]<id>, "abc123list", "Proper ID (1)";
     is $boards[0]<name>, "Today", "Proper name (1)";
     nok $boards[0]<pos>:exists, "POS not defined (1)";
 
     $boards = $trello.get_lists(board => "5b689b3228998cf3f01c629e", fields => ("pos", "name"));
     is $boards.elems, 1, "Proper number of elements (2)";
-    is $boards[0]<id>, "abc123", "Proper ID (2)";
+    is $boards[0]<id>, "abc123list", "Proper ID (2)";
     is $boards[0]<name>, "Today", "Proper name (2)";
     is $boards[0]<pos>, 8192, "Proper POS (2)";
 
@@ -65,6 +74,42 @@ subtest 'get_cards', {
     is $boards[0]<id>, "abc123", "Proper ID (2)";
     is $boards[0]<name>, "Task", "Proper name (2)";
     is $boards[0]<pos>, 8192, "Proper POS (2)";
+
+    done-testing;
+}
+
+subtest 'sync', {
+    my $tmpdir = tempdir.IO;    # Get IO::Path object for tmpdir.
+    my $cwd = $*CWD;
+    say "CWD: {$*CWD.Str}";
+    
+    my ($fn, $fh) = tempfile;
+    $fh.say: "theme: 'no-color'";
+    $fh.say: "trello:";
+    $fh.say: "  api-key: \"mykey\"";
+    $fh.say: "  token: \"mytoken\"";
+    $fh.say: "  base-url: \"{$url}\"";
+    $fh.say: "  tasks:";
+    $fh.say: "    \"Never ending Backlog\":";
+    $fh.say: "      Today: \"tag1\"";
+    $fh.close;
+
+    my ($fn2, $fh2) = tempfile;
+    $fh2.close;
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn2.IO);
+    my $task = App::Tasks.new( :data-dir($tmpdir), :config($conf) );
+
+    my @tasks = $task.read-tasks;
+    is @tasks.elems, 0, "Proper number of task elements exist (start)";
+
+    lives-ok { $task.task-trello-sync }, "Sync doesn't die";
+
+    @tasks = $task.read-tasks;
+    is @tasks.elems, 1, "Proper number of task elements exist (A)";
+    $task.task-trello-sync;
+    is @tasks.elems, 1, "Proper number of task elements exist (B)";
+    is @tasks[0].title, "Task", "Proper task title";
+    is @tasks[0].trello-id, "abc123", "Proper Trello ID";
 
     done-testing;
 }
@@ -132,7 +177,7 @@ sub setup-listener() {
                     (
                         {
                             closed => False,
-                            id =>"abc123",
+                            id =>"abc123list",
                             idBoard => "abc123",
                             name => "Today",
                             pos => 8192,
@@ -160,6 +205,7 @@ sub setup-listener() {
                             id =>"abc123",
                             name => "Task",
                             pos => 8192,
+                            idList => 'abc123list',
                         },
                     );
                 my @fields = $fields.split(",");

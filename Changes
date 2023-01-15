@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Initial Trello syncronization (one-way)
     - [bugfix] Config file reader now tests for readability rather than
       existance of config files.
     - Config files can now be split into "public" and "secret" parts
