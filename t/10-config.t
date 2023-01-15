@@ -152,5 +152,31 @@ subtest 'trello', {
     done-testing;
 }
 
+subtest 'trello-secret', {
+    my ($fn, $fh) = tempfile;
+    $fh.say: "monitor:";
+    $fh.say: "  display-time: Yes";
+    $fh.close;
+    $fh.close;
+
+    my ($fn-secret, $fh-secret) = tempfile;
+    $fh-secret.say: "trello:";
+    $fh-secret.say: "  api-key: \"foo\"";
+    $fh-secret.say: "  token: \"bar\"";
+    $fh-secret.close;
+
+    my $conf = App::Tasks::Config.read-config($fn.IO, $fn-secret.IO);
+    is $conf.WHAT, App::Tasks::Config, "Initialized class";
+
+    my @expected = False;
+    is $conf.monitor.display-time, True, "Do display time";
+
+    @expected = False;
+    is $conf.trello.api-key, "foo", "Trello API key set";
+    is $conf.trello.token, "bar", "Trello token set";
+
+    done-testing;
+}
+
 done-testing;
 

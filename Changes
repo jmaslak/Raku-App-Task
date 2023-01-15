@@ -1,6 +1,14 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [bugfix] Config file reader now tests for readability rather than
+      existance of config files.
+    - Config files can now be split into "public" and "secret" parts
+      which may be useful for people who use github or similar to manage
+      their dotfiles.  ~/.task.yaml continues to be the main config file,
+      but if ~/.task.secret.yaml exists, it can contain additional
+      configuration that is merged with the contents of .task.yaml (using
+      Hash::Merge).
 
 0.2.1  2023-01-08T23:17:05-07:00
     - [bugfix] Avoid "monitor" deadlock

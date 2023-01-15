@@ -9,6 +9,7 @@
     "Cro",
     "Digest::SHA1::Native",
     "File::Temp",
+    "Hash::Merge",
     "NativeCall",
     "P5getpriority",
     "P5localtime",

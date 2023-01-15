@@ -10,6 +10,7 @@ use App::Tasks::Config::Trello;
 
 class App::Tasks::Config:ver<0.2.1>:auth<zef:jmaslak> {
 
+    use Hash::Merge;
     use Terminal::ANSIColor;
     use YAMLish;
 
@@ -33,25 +34,42 @@ class App::Tasks::Config:ver<0.2.1>:auth<zef:jmaslak> {
     has Monitor:D $.monitor                   is rw = Monitor.new();
     has Trello:D  $.trello                    is rw = Trello.new();
 
-    method read-config(IO::Path:D $config-file? = $*HOME.add('.task.yaml')) {
+    method read-config(
+        IO::Path:D $config-file? = $*HOME.add('.task.yaml'),
+        IO::Path:D $secret-file? = $*HOME.add('.task.secret.yaml')
+    ) {
         my $contents = '';
-        if $config-file.e {
+        if $config-file.r {
             $contents = $config-file.slurp.chomp;
         }
+        my $secret-contents = '';
+        if $secret-file.r {
+            $secret-contents = $secret-file.slurp.chomp;
+        }
 
-        return self.from-string($contents);
+        return self.from-string($contents, $secret-contents);
     }
 
-    method from-string(Str:D $config-contents) {
+    method from-string(Str:D $config-contents, Str:D $secret-contents? = "") {
         my $obj = self.bless;
 
-        my $y = Hash.new;
+        my $c = Hash.new;
         if $config-contents ne '' {
-            $y = load-yaml($config-contents);
-            if $y !~~ Hash {
+            $c = load-yaml($config-contents);
+            if $c !~~ Hash {
                 die("Config file does not appear to be properly formatted");
             }
         }
+        my $s-y = Hash.new;
+        if $secret-contents ne '' {
+            $s-y = load-yaml($secret-contents);
+            if $s-y !~~ Hash {
+                die("Secret file does not appear to be properly formatted");
+            }
+        }
+
+        # Merge $c & $s-y into $y (yaml)
+        my $y = merge-hashes($c, $s-y);
 
         # Set theme colors
         if $y<theme>:exists {
@@ -213,15 +231,17 @@ specified with this configuration file.
 
 =head2 read-config
 
-  my $config = App::Tasks::Config.read-config($io-path);
+  my $config = App::Tasks::Config.read-config($io-path, $secret-path);
 
-This method optionally takes an C<IO::Path> argument providing the location of
-the config file.  If the config file is readable (using the C<.r> method on
+This method optionally takes two C<IO::Path> arguments providing the locations of
+the config files.  If the config files are readable (using the C<.r> method on
 the argument), it is parsed as a YAML file for the attributes listed below.
 
-If an IO::Path object is not passed to this method, the config file should be
-named C<$*HOME/.task.yaml>, where C<$*HOME> is of course your user home
-directory.
+If an IO::Path object is not passed to this method as the first parameter,
+the config file should be named C<$*HOME/.task.yaml>, where C<$*HOME> is
+of course your user home directory.
+
+You can also 
 
 =head2 from-string
 
