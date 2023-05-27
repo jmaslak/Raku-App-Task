@@ -1,6 +1,6 @@
 Revision history for App-Tasks
 
-{{$NEXT}}
+0.3.1  2023-05-26
     - [bugfix] Fix broken dependency
 
 0.3.0  2023-01-15T11:45:37-07:00
