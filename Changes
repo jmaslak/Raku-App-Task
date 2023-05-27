@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [bugfix] Fix broken dependency
 
 0.3.0  2023-01-15T11:45:37-07:00
     - Initial Trello syncronization (one-way)
