@@ -1,6 +1,7 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - [bugfix] Fix link to Github
 
 0.3.1  2023-05-26T20:30:00-0700
     - [bugfix] Fix broken dependency
