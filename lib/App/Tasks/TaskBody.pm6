@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::TaskBody:ver<0.3.0>:auth<zef:jmaslak> {
+class App::Tasks::TaskBody:ver<0.3.2>:auth<zef:jmaslak> {
     has DateTime $.date;
     has Str      $.text;
 }

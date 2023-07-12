@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Task:ver<0.3.0>:auth<zef:jmaslak> {
+class App::Tasks::Task:ver<0.3.2>:auth<zef:jmaslak> {
     use App::Tasks::TaskBody;
 
     subset Tag of Str where { !$^a.defined or $^a ~~ /^ \S+ $/ };
