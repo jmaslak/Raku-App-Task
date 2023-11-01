@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+    - Add a congratulations note to task monitor when all tasks are
+      done
 
 0.3.2  2023-07-12T15:11:46-04:00
     - [bugfix] Fix link to Github

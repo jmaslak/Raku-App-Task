@@ -1170,9 +1170,16 @@ method task-monitor-show(
         :$tag,
     );
     if $out ne $last or $force {
+        dd $out;
         $last = $out;
         self.update-task-log();
         self.clear;
+        if $out eq "" {
+            say "";
+            my $color = $.config.prompt-info-color;
+            say "  --> {$color}CONGRATS YOU HAVE AN EMPTY LIST!{$.config.reset} <--";
+            say "";
+        }
         print $out;
         print $.config.reset;
         print "     ...Type any character to exit...  ";
