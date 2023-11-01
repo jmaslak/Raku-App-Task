@@ -1,6 +1,8 @@
 Revision history for App-Tasks
 
 {{$NEXT}}
+
+0.4.0  2023-10-31T22:08:58-06:00
     - Add a congratulations note to task monitor when all tasks are
       done
 

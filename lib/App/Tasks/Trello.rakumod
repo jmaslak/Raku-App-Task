@@ -9,7 +9,7 @@ use URI::Encode;
 use Cro::HTTP::Client;
 use JSON::Fast;
 
-unit class App::Tasks::Trello:ver<0.3.2>:auth<zef:jmaslak>;
+unit class App::Tasks::Trello:ver<0.4.0>:auth<zef:jmaslak>;
 
 has Str:D $.api-key  is required is rw;
 has Str:D $.token    is required is rw;

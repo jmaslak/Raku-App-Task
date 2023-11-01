@@ -5,7 +5,7 @@ use v6.c;
 # All Rights Reserved - See License
 #
 
-class App::Tasks::Lock:ver<0.3.2>:auth<zef:jmaslak> {
+class App::Tasks::Lock:ver<0.4.0>:auth<zef:jmaslak> {
     my Lock:D     $SEMAPHORE = Lock.new;
     my Int:D      $LOCKCNT   = 0;
     my IO::Handle $LOCK;
